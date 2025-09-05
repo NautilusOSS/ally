@@ -1,0 +1,32 @@
+[
+  {
+    "address": "VOI",
+    "symbol": "VOI",
+    "decimals": 6,
+    "name": "Voi"
+  },
+  {
+    "address": "USDC",
+    "symbol": "USDC",
+    "decimals": 6,
+    "name": "USD Coin"
+  },
+  {
+    "address": "BUIDL",
+    "symbol": "BUIDL",
+    "decimals": 6,
+    "name": "BUIDL Token"
+  },
+  {
+    "address": "WVOI",
+    "symbol": "WVOI",
+    "decimals": 6,
+    "name": "Wrapped Voi"
+  },
+  {
+    "address": "ALGO",
+    "symbol": "ALGO",
+    "decimals": 6,
+    "name": "Algorand"
+  }
+]

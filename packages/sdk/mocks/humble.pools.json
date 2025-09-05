@@ -1,0 +1,59 @@
+[
+  {
+    "id": "humble-voi-usdc",
+    "dex": "HUMBLE",
+    "tokenA": {
+      "address": "VOI",
+      "symbol": "VOI",
+      "decimals": 6,
+      "name": "Voi"
+    },
+    "tokenB": {
+      "address": "USDC",
+      "symbol": "USDC",
+      "decimals": 6,
+      "name": "USD Coin"
+    },
+    "reserveA": "1000000000000",
+    "reserveB": "500000000000",
+    "feePct": 0.3
+  },
+  {
+    "id": "humble-usdc-buidl",
+    "dex": "HUMBLE",
+    "tokenA": {
+      "address": "USDC",
+      "symbol": "USDC",
+      "decimals": 6,
+      "name": "USD Coin"
+    },
+    "tokenB": {
+      "address": "BUIDL",
+      "symbol": "BUIDL",
+      "decimals": 6,
+      "name": "BUIDL Token"
+    },
+    "reserveA": "500000000000",
+    "reserveB": "250000000000",
+    "feePct": 0.3
+  },
+  {
+    "id": "humble-voi-buidl",
+    "dex": "HUMBLE",
+    "tokenA": {
+      "address": "VOI",
+      "symbol": "VOI",
+      "decimals": 6,
+      "name": "Voi"
+    },
+    "tokenB": {
+      "address": "BUIDL",
+      "symbol": "BUIDL",
+      "decimals": 6,
+      "name": "BUIDL Token"
+    },
+    "reserveA": "2000000000000",
+    "reserveB": "1000000000000",
+    "feePct": 0.3
+  }
+]
