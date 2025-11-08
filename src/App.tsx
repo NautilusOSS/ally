@@ -50,6 +50,7 @@ function App() {
       caipChainId: 'algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n',
     })
     .build();
+
   const wallets = [
     {
       id: WalletId.LUTE,
@@ -70,6 +71,7 @@ function App() {
       },
     },
   ];
+
   const manager = new WalletManager({
     wallets: wallets as SupportedWallet[],
     networks,

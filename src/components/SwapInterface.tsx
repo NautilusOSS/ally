@@ -5,7 +5,7 @@ import type {
   ApiConfig,
   AppConfig,
 } from '../lib/config';
-import { useWallet } from '@txnlab/use-wallet-react';
+import { useWallet, WalletId } from '@txnlab/use-wallet-react';
 import algosdk from 'algosdk';
 
 interface SwapInterfaceProps {
@@ -305,7 +305,21 @@ export default function SwapInterface({
     setError(null);
 
     try {
-      // Check for Algorand wallet
+      // Verify wallet is still connected and session is valid
+      if (!activeWallet) {
+        throw new Error('Wallet session lost. Please reconnect your wallet.');
+      }
+
+      // For WalletConnect, check if the wallet has a valid connection
+      // WalletConnect sessions can expire, so verify the connection is still active
+      const isWalletConnect = activeWallet.id === WalletId.WALLETCONNECT || 
+                               activeWallet.id?.toLowerCase().includes('walletconnect');
+      if (isWalletConnect) {
+        // Check if wallet is still connected by verifying activeAccount
+        if (!activeAccount || !activeAccount.address) {
+          throw new Error('WalletConnect session expired. Please reconnect your wallet.');
+        }
+      }
 
       // Decode base64 transactions to Uint8Array
       const txnsToSign = unsignedTransactions.map((txnBase64: string) => {
@@ -338,11 +352,15 @@ export default function SwapInterface({
       setUnsignedTransactions([]);
       onAmountChange('');
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to sign or submit transactions'
-      );
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign or submit transactions';
+      
+      // Check for WalletConnect session errors
+      if (errorMessage.toLowerCase().includes('session') || 
+          errorMessage.toLowerCase().includes('no session found')) {
+        setError('WalletConnect session expired. Please reconnect your wallet and try again.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setSwapping(false);
     }
