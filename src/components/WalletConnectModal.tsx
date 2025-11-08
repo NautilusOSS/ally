@@ -24,6 +24,7 @@ export default function WalletConnectModal({
     setConnecting(true);
     setConnectingWalletId(wallet.id);
     try {
+      console.log({wallet});
       // Use the wallet's connect method if available
       if (wallet.connect) {
         await wallet.connect();

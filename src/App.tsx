@@ -58,7 +58,6 @@ function App() {
         siteName: 'Ally',
       },
     },
-    WalletId.DEFLY,
     {
       id: WalletId.WALLETCONNECT,
       options: {
@@ -67,8 +66,7 @@ function App() {
           name: 'Ally',
           description: 'DEX Aggregator for Voi Network',
           url: 'https://ally.nautilus.sh',
-          icons: ['https://ally.nautilus.sh/logo.png'],
-        },
+        }
       },
     },
   ];

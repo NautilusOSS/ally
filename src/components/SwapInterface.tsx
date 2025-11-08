@@ -331,6 +331,8 @@ export default function SwapInterface({
         return bytes;
       });
 
+
+      console.log({txnsToSign});
       // Sign all transactions as a group
       const stxns = await signTransactions(txnsToSign);
 
@@ -817,7 +819,7 @@ export default function SwapInterface({
                       Connect Wallet
                     </button>
                     <p className="text-xs text-gray-500 mt-2 text-center">
-                      Supported: Pera Wallet, Defly Wallet, and other Algorand
+                      Supported: Voi Wallet, Lute Wallet, and other Algorand
                       wallets
                     </p>
                   </div>
