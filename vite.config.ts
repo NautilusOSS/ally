@@ -37,7 +37,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'wallet-vendor': ['@txnlab/use-wallet-react', '@txnlab/use-wallet'],
+          'wallet-vendor': ['@txnlab/use-wallet-react', '@txnlab/use-wallet', '@walletconnect/modal', '@walletconnect/sign-client'],
         },
       },
     },
