@@ -13,190 +13,118 @@ A simple & intuitive DEX aggregator for Voi that finds the best routes across Hu
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
-- **Backend**: Fastify API server
-- **SDK**: Shared types, AMM math, and DEX adapters
-- **Testing**: Vitest for unit tests
-- **Monorepo**: pnpm workspaces
+- **Frontend**: Vite + React 18 with TypeScript
+- **Styling**: Tailwind CSS
+- **Wallet Integration**: @txnlab/use-wallet-react for Algorand/Voi wallet connections
+- **Build Tool**: Vite
+- **Package Manager**: npm
+- **Deployment**: AWS Amplify
 
 ## Quick Start
 
 1. **Install dependencies**:
    ```bash
-   pnpm install
+   npm install
    ```
 
-2. **Start development servers**:
+2. **Start development server**:
    ```bash
-   pnpm dev
+   npm run dev
    ```
-   This runs:
-   - API server on http://localhost:3001
-   - Web app on http://localhost:3000
+   This runs the web app on http://localhost:3999
 
-3. **Run tests**:
+3. **Build for production**:
    ```bash
-   pnpm test
+   npm run build
+   ```
+
+4. **Preview production build**:
+   ```bash
+   npm run preview
    ```
 
 ## Project Structure
 
 ```
 ally/
-├── apps/
-│   ├── api/                 # Fastify API server
-│   │   ├── src/
-│   │   │   ├── routes/      # API routes
-│   │   │   └── index.ts     # Server entry point
-│   │   └── package.json
-│   └── web/                 # Next.js frontend
-│       ├── app/             # App Router pages
-│       ├── styles/          # Global styles
-│       └── package.json
-├── packages/
-│   └── sdk/                 # Shared SDK
-│       ├── src/
-│       │   ├── adapters/    # DEX adapters
-│       │   ├── types.ts     # TypeScript types
-│       │   ├── math.ts      # AMM calculations
-│       │   └── router.ts    # Routing logic
-│       ├── mocks/           # Mock pool data
-│       └── tokens.voi.json  # Token list
-└── package.json             # Root package.json
+├── src/
+│   ├── components/          # React components
+│   │   ├── SwapInterface.tsx
+│   │   └── WalletConnectModal.tsx
+│   ├── lib/
+│   │   └── config.ts        # Configuration loading utilities
+│   ├── App.tsx              # Main app component
+│   ├── main.tsx             # Application entry point
+│   └── index.css            # Global styles
+├── public/
+│   └── config/              # Configuration files (JSON)
+│       ├── api.json         # API endpoints configuration
+│       ├── app.json         # App settings
+│       ├── pools.json       # DEX pool configurations
+│       └── tokens.json      # Token list
+├── config/                  # Source config files (copied to public/)
+├── dist/                    # Production build output
+├── vite.config.ts           # Vite configuration
+├── tailwind.config.cjs      # Tailwind CSS configuration
+└── package.json
 ```
 
-## API Endpoints
+## Configuration
 
-### GET /api/quote
+The app is configuration-driven using JSON files in the `public/config/` directory:
 
-Get the best quote for a token swap.
+- **`api.json`**: API endpoint configurations for external services
+- **`app.json`**: Application settings including token whitelists
+- **`pools.json`**: DEX pool configurations for HumbleSwap and nomadex
+- **`tokens.json`**: Token metadata including addresses, symbols, and decimals
 
-**Parameters**:
-- `from`: Source token address
-- `to`: Destination token address  
-- `amount`: Amount to swap
-- `slippageBps`: Slippage tolerance in basis points (default: 50)
-- `swapApiPoolIds`: Optional comma-separated list of swap-api pool IDs to include in routing
-
-**Example**:
-```
-GET /api/quote?from=VOI&to=BUIDL&amount=100&slippageBps=50
-```
-
-**Response**:
-```json
-{
-  "amountIn": "100",
-  "amountOut": "49.925",
-  "path": [
-    {
-      "dex": "HUMBLE",
-      "from": "VOI",
-      "to": "BUIDL", 
-      "poolId": "humble-voi-buidl"
-    }
-  ],
-  "priceImpactPct": 0.15,
-  "feesEstimated": {
-    "lpFeePct": 0.3
-  },
-  "routeType": "DIRECT",
-  "comparedRoutes": [...],
-  "timestamp": 1703123456789
-}
-```
-
-### POST /api/quote/swap-api
-
-Get a quote directly from swap-api for a specific pool.
-
-**Request Body**:
-```json
-{
-  "address": "4LI2Z52C3WKIPFTVMCUJ5LSYU4KLUA6JNMQAQQRI6RAVIMZWAPI52F5YKY",
-  "inputToken": 395614,
-  "outputToken": 390001,
-  "amount": "100000",
-  "poolId": "395553",
-  "slippageTolerance": 0.01
-}
-```
-
-**Response**: Same format as `/api/quote`
-
-**Note**: The swap-api supports underlying ASA IDs (e.g., `302190` for USDC, `0` for VOI) and automatically handles wrapping/unwrapping to ARC200 tokens.
-
-### GET /api/health
-
-Health check endpoint.
+These files are loaded at runtime and can be updated without rebuilding the application.
 
 ## Development
 
-### Adding New DEXes
+### Wallet Integration
 
-1. Create a new adapter in `packages/sdk/src/adapters/`
-2. Implement the `DexAdapter` interface
-3. Add mock data in `packages/sdk/mocks/`
-4. Register the adapter in `packages/sdk/src/router.ts`
-5. Update types in `packages/sdk/src/types.ts` to include the new DEX name
+The app uses `@txnlab/use-wallet-react` for wallet connections. Currently supports:
+- **Lute Wallet**: Primary wallet integration via WalletConnect
 
-### Swap-API Integration
+The app is configured for the Voi mainnet network.
 
-The swap-api adapter integrates with the [swap-api](https://github.com/xarmian/swap-api) service which uses ulujs to interact with swap200 contracts on the Voi Network. 
+### Adding New Tokens
 
-**Features**:
-- Supports ARC200 token swaps
-- Automatic wrap/unwrap for ASA↔ARC200 conversions
-- Uses AMM constant product formula for pricing
-- Requires poolId to be specified (pools are not auto-discovered)
+1. Add token metadata to `config/tokens.json`
+2. Ensure the token is included in pool configurations in `config/pools.json`
+3. Optionally add to token whitelist in `config/app.json` if using whitelisting
 
-**Usage**:
-- Use `GET /api/quote?swapApiPoolIds=395553,401594` to include swap-api pools in routing
-- Use `POST /api/quote/swap-api` for direct swap-api quotes with a specific poolId
+### Configuration Updates
 
-### Testing
+Configuration files in `config/` are copied to `public/config/` during build. For development, you can edit files directly in `public/config/` to see changes immediately.
 
-Run unit tests:
+### Code Quality
+
+Run linting:
 ```bash
-pnpm test
+npm run lint
 ```
 
-Run tests in watch mode:
+Format code:
 ```bash
-pnpm test:watch
+npm run format
 ```
 
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
+Type checking:
 ```bash
-cp .env.example .env
+npm run type-check
 ```
 
-Key variables:
-- `VOI_TOKEN_LIST`: Path to token list JSON
-- `HUMBLE_INDEXER_URL`: HumbleSwap API endpoint
-- `PACT_INDEXER_URL`: nomadex API endpoint
-- `SWAP_API_URL`: Swap-API base URL (default: https://swap-api-iota.vercel.app)
-- `API_PORT`: API server port (default: 3001)
-- `WEB_PORT`: Web app port (default: 3000)
+## DEX Integration
 
-## Mock Data
+The app integrates with multiple DEXes on the Voi network:
 
-The MVP includes mock pool data for development:
+- **HumbleSwap**: Supports wrapped token pools with automatic wrap/unwrap
+- **nomadex**: Direct token pair pools
+- **Swap-API**: ARC200 token swaps via swap200 contracts
 
-- **HumbleSwap**: VOI/USDC, USDC/BUIDL, VOI/BUIDL pools
-- **nomadex**: VOI/USDC, USDC/BUIDL, VOI/WVOI pools
-
-## Token List
-
-Supported tokens (in `packages/sdk/tokens.voi.json`):
-- VOI (Voi)
-- USDC (USD Coin)
-- BUIDL (BUIDL Token)
-- WVOI (Wrapped Voi)
-- ALGO (Algorand)
+Pool configurations are defined in `config/pools.json` and can be updated without code changes.
 
 ## Contributing
 
