@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type {
   TokenConfig,
   PoolConfig,
@@ -74,6 +74,40 @@ export default function SwapInterface({
     []
   );
   const [swapping, setSwapping] = useState(false);
+
+  // Filter out fromToken from available tokens for toToken selection
+  const availableToTokens = useMemo(
+    () =>
+      tokens.filter(
+        (token) =>
+          token.tokenId !== fromToken &&
+          token.address !== fromToken &&
+          token.symbol !== fromToken
+      ),
+    [tokens, fromToken]
+  );
+
+  // Auto-select first available token if current toToken matches fromToken
+  useEffect(() => {
+    if (
+      tokens.length > 0 &&
+      availableToTokens.length > 0 &&
+      (toToken === fromToken ||
+        tokens.find(
+          (t) =>
+            (t.tokenId === toToken ||
+              t.address === toToken ||
+              t.symbol === toToken) &&
+            (t.tokenId === fromToken ||
+              t.address === fromToken ||
+              t.symbol === fromToken)
+        ))
+    ) {
+      // Current toToken matches fromToken, select first available token
+      onToTokenChange(availableToTokens[0].tokenId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromToken, toToken, availableToTokens]);
 
   const handleGetQuote = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -170,14 +204,14 @@ export default function SwapInterface({
       // Map DEX names from swap-api format to our format
       const mapDexName = (dex: string) => {
         if (dex === 'humbleswap') return 'HUMBLE';
-        if (dex === 'nomadex') return 'PACT';
+        if (dex === 'nomadex') return 'NOMADEX';
         return 'SWAP_API';
       };
 
       const path =
         routePools.length > 0
           ? routePools.map((pool: any) => ({
-              dex: mapDexName(pool.dex) as 'HUMBLE' | 'PACT' | 'SWAP_API',
+              dex: mapDexName(pool.dex) as 'HUMBLE' | 'NOMADEX' | 'SWAP_API',
               from: currentFromTokenInfo.tokenId.toString(),
               to: currentToTokenInfo.tokenId.toString(),
               poolId: pool.poolId,
@@ -318,32 +352,47 @@ export default function SwapInterface({
               {/* From Token */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  From
+                  You pay
                 </label>
-                <div className="flex gap-2">
-                  <select
-                    value={fromToken}
-                    onChange={(e) => {
-                      onFromTokenChange(e.target.value);
-                    }}
-                    className="input-field flex-shrink-0 w-32"
-                    disabled={!tokens.length}
-                  >
-                    {tokens.map((token) => (
-                      <option key={token.tokenId} value={token.tokenId}>
-                        {token.symbol}
-                      </option>
-                    ))}
-                  </select>
+                <div className="relative flex items-center">
                   <input
                     type="number"
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => onAmountChange(e.target.value)}
-                    className="input-field"
+                    className="input-field pr-32"
                     step="0.000001"
                     min="0"
                   />
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <select
+                      value={fromToken}
+                      onChange={(e) => {
+                        onFromTokenChange(e.target.value);
+                      }}
+                      className="bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer appearance-none text-right font-medium text-gray-700 pr-5"
+                      disabled={!tokens.length}
+                    >
+                      {tokens.map((token) => (
+                        <option key={token.tokenId} value={token.tokenId}>
+                          {token.symbol}
+                        </option>
+                      ))}
+                    </select>
+                    <svg
+                      className="pointer-events-none h-4 w-4 text-gray-500 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
@@ -375,22 +424,46 @@ export default function SwapInterface({
               {/* To Token */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  To
+                  You receive
                 </label>
-                <select
-                  value={toToken}
-                  onChange={(e) => {
-                    onToTokenChange(e.target.value);
-                  }}
-                  className="input-field"
-                  disabled={!tokens.length}
-                >
-                  {tokens.map((token) => (
-                    <option key={token.tokenId} value={token.tokenId}>
-                      {token.symbol}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="0.00"
+                    value={quote ? parseFloat(quote.amountOut).toFixed(6) : ''}
+                    readOnly
+                    className="input-field pr-32 bg-gray-50"
+                  />
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <select
+                      value={toToken}
+                      onChange={(e) => {
+                        onToTokenChange(e.target.value);
+                      }}
+                      className="bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer appearance-none text-right font-medium text-gray-700 pr-5"
+                      disabled={!tokens.length}
+                    >
+                      {availableToTokens.map((token) => (
+                        <option key={token.tokenId} value={token.tokenId}>
+                          {token.symbol}
+                        </option>
+                      ))}
+                    </select>
+                    <svg
+                      className="pointer-events-none h-4 w-4 text-gray-500 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Available Pools */}

@@ -7,29 +7,31 @@ Goals
 
 Simple & intuitive: one input, one output, best route clearly shown.
 
-MVP: off-chain quoting only (no on-chain execution yet).
+MVP: off-chain quoting with on-chain execution support via wallet integration.
 
-DEX coverage: start with HumbleSwap and PactFi via lightweight adapters.
+DEX coverage: HumbleSwap, nomadex, and Swap-API (swap200 contracts) integration.
 
-Routing: best of (a) single-hop on either DEX, (b) two-hop via a common intermediate (e.g., VOI or USDC).
+Routing: leverages Swap-API service for best route discovery across DEXes, supporting direct and multi-hop routes.
 
-Standards: ARC-200 token metadata (symbol, decimals) handled cleanly.
+Standards: ARC-200 token metadata (symbol, decimals) handled cleanly. Supports both ASA and ARC200 tokens with automatic wrap/unwrap.
 
 Tech
 
-Monorepo with pnpm workspaces:
+Single-page application with Vite + React:
 
-apps/web: Next.js 14 (App Router, TypeScript).
+Frontend: Vite + React + TypeScript (not Next.js).
 
-apps/api: Fastify + TypeScript; exposes /quote.
+No separate API server: calls Swap-API service directly from frontend.
 
-packages/sdk: shared types, pool math, router, and DEX adapters.
+Config-based architecture: JSON config files in `/config` directory for tokens, pools, API endpoints, and app settings.
+
+Wallet integration: @txnlab/use-wallet-react for Algorand wallet connections (Pera, Defly, Lute, etc.).
 
 Styling: Tailwind CSS.
 
 Lint/format: ESLint + Prettier.
 
-Testing: Vitest + happy-path tests for routing math.
+Build: Vite for fast development and optimized production builds.
 
 UX (keep it extremely simple)
 
@@ -46,7 +48,7 @@ Output card shows:
 
 Best amount out
 
-Route (e.g., HumbleSwap direct, or PactFi: VOI→USDC→BUIDL)
+Route (e.g., HumbleSwap direct, or nomadex: VOI→USDC→BUIDL)
 
 Estimated price impact and route breakdown
 
@@ -56,174 +58,231 @@ Empty state copy: “Pick tokens, enter an amount, and let Ally find the best ro
 
 Data assumptions
 
-Provide a tiny in-repo token list for Voi (JSON) with a few sample tokens (VOI, USDC, BUIDL, WVOI etc.).
+Token list: JSON config file at `/config/tokens.json` with token metadata (tokenId, symbol, decimals, name).
 
-Provide mockable indexer endpoints via .env (don’t hard-depend on live infra). If env is missing, seed with sample pool snapshots (JSON) for HumbleSwap & PactFi to make quotes work offline.
+Pool configuration: JSON config file at `/config/pools.json` defining available pools for HumbleSwap and Nomadex.
 
-API
+API configuration: JSON config file at `/config/api.json` defining Swap-API endpoints and settings.
 
-GET /quote?from=VOI&to=BUIDL&amount=123.45&slippageBps=50
+App configuration: JSON config file at `/config/app.json` defining UI defaults, routing settings, and DEX configurations.
+
+Swap-API Integration
+
+The app uses the Swap-API service (https://swap-api-iota.vercel.app) for routing and quotes:
+
+POST /quote endpoint accepts:
+- inputToken: token ID (number)
+- outputToken: token ID (number)
+- amount: amount in base units (string)
+- poolId: optional pool ID (string) - if omitted, auto-discovers best pool
+- address: optional wallet address (string) - if provided, returns unsigned transactions
+- slippageTolerance: slippage tolerance (number, default 0.01)
 
 Returns:
+- quote: { inputAmount, outputAmount, rate, priceImpact }
+- route: { pools: Array<{dex, poolId, inputAmount, outputAmount}> }
+- poolId: selected pool ID
+- unsignedTransactions: base64-encoded transactions (if address provided)
+
+Quote Format (converted from Swap-API response):
 
 type Quote = {
   amountIn: string; // normalized decimal string
   amountOut: string;
-  path: Array<{ dex: 'HUMBLE'|'PACT'; from: string; to: string; poolId: string }>;
+  path: Array<{ dex: 'HUMBLE'|'NOMADEX'|'SWAP_API'; from: string; to: string; poolId: string }>;
   priceImpactPct: number;
   feesEstimated: { lpFeePct: number; protocolFeePct?: number };
   warnings?: string[];
   routeType: 'DIRECT' | 'TWO_HOP';
   comparedRoutes: Array<{label:string; amountOut:string; routeType:string}>;
   timestamp: number;
+  swapApiData?: {
+    rate: number;
+    poolId: string;
+    route: any;
+  };
 }
 
+Handle token decimals correctly; convert between display units and base units (10^decimals).
 
-Handle token decimals correctly; use BigInt where helpful; avoid floating-point drift.
+Implementation Details
 
-Packages (implementation details)
-packages/sdk
+Frontend Structure (src/):
 
-types.ts: Token, Pool, DexAdapter interface.
+App.tsx: Main app component that:
+- Loads configs from `/config` directory (tokens, pools, API, app)
+- Manages wallet connection state
+- Handles token selection and pool filtering
+- Renders SwapInterface and WalletConnectModal
 
-math.ts: x*y=k AMM math helpers: getAmountOut, priceImpact, slippage helpers.
+components/SwapInterface.tsx: Main swap UI component that:
+- Displays token selectors and amount input
+- Shows available pools (optional pool selection)
+- Calls Swap-API /quote endpoint
+- Displays quote results with route breakdown
+- Handles wallet connection and swap execution
+- Shows route comparison table
 
-adapters/humble.ts and adapters/pact.ts:
+components/WalletConnectModal.tsx: Modal for wallet selection and connection
 
-fetchPools(tokens: Token[]): Promise<Pool[]> (from env indexer URL or local mocks)
+lib/config.ts: Config loader utilities:
+- loadTokensConfig(): Promise<TokenConfig[]>
+- loadPoolsConfig(): Promise<PoolConfig[]>
+- loadApiConfig(): Promise<ApiConfig>
+- loadAppConfig(): Promise<AppConfig>
 
-findDirectPool(from, to): Pool | null
+Config Files (config/):
 
-router.ts:
+tokens.json: Token metadata (tokenId, symbol, decimals, name)
+pools.json: Pool configurations (poolId, dex, tokens, fee)
+api.json: API endpoint configurations (Swap-API, Voi API, local API)
+app.json: App settings (UI defaults, routing config, DEX settings)
 
-quoteDirect(adapters[], from, to, amountIn)
+Features:
 
-quoteTwoHop(adapters[], from, mid, to, amountIn) with candidate mids from a small allowlist (e.g., VOI, USDC).
+Token selection: Dropdowns populated from tokens.json, filtered by available pools or whitelist
+Pool selection: Optional pool selector when multiple pools available for token pair
+Quote fetching: Direct POST to Swap-API /quote endpoint
+Route display: Shows DEX name, pool ID, exchange rate, price impact
+Swap execution: Signs and submits unsigned transactions via wallet
+Wallet integration: Supports Pera, Defly, Lute, and other Algorand wallets via @txnlab/use-wallet-react
 
-bestQuote(...) that compares: Humble direct, Pact direct, Humble two-hop, Pact two-hop, and cross-DEX two-hop (e.g., Humble first hop + Pact second hop).
-
-Return consistent Quote per schema.
-
-apps/api
-
-Fastify server with CORS.
-
-Route /quote → parse params → call bestQuote → return JSON.
-
-Environment:
-
-VOI_TOKEN_LIST=./packages/sdk/tokens.voi.json
-HUMBLE_INDEXER_URL=http://localhost:4001/mock-humble.json
-PACT_INDEXER_URL=http://localhost:4001/mock-pact.json
-
-
-Include a /health endpoint.
-
-apps/web
-
-Next.js page app/page.tsx with:
-
-Minimal token pickers (from token list), numeric amount input
-
-Call /quote and render the result card
-
-“Compare routes” toggles a small table of the comparedRoutes
-
-Nice touches:
-
-Input validation (disable button if invalid)
-
-Loading state on button
-
-Error toast on API failure
-
-Branding: small Ally logo (text logo ok), dark-blue theme.
-
-File tree (sketch)
+File tree (actual structure)
 ally/
-  apps/
-    api/
-      src/index.ts
-      src/routes/quote.ts
-      src/routes/health.ts
-    web/
-      app/page.tsx
-      styles/globals.css
-  packages/
-    sdk/
-      src/types.ts
-      src/math.ts
-      src/router.ts
-      src/adapters/humble.ts
-      src/adapters/pact.ts
-      tokens.voi.json
-      mocks/
-        humble.pools.json
-        pact.pools.json
-  package.json
-  pnpm-workspace.yaml
-  .eslintrc.cjs
-  .prettierrc
-  tsconfig.json
-  .env.example
-  README.md
+  src/
+    App.tsx                    # Main app component
+    main.tsx                    # React entry point
+    index.css                   # Global styles
+    components/
+      SwapInterface.tsx         # Main swap UI
+      WalletConnectModal.tsx    # Wallet connection modal
+    lib/
+      config.ts                 # Config loader utilities
+  config/
+    tokens.json                 # Token metadata
+    pools.json                  # Pool configurations
+    api.json                    # API endpoint configs
+    app.json                    # App settings
+    README.md                   # Config documentation
+  public/
+    config/                     # Config files (copied to dist)
+      tokens.json
+      pools.json
+      api.json
+      app.json
+    _redirects                  # Netlify/Amplify redirects
+  dist/                         # Build output
+  package.json                  # Dependencies and scripts
+  vite.config.ts                # Vite configuration
+  tsconfig.json                 # TypeScript config
+  tailwind.config.cjs          # Tailwind CSS config
+  postcss.config.cjs            # PostCSS config
+  .eslintrc.cjs                 # ESLint config
+  .prettierrc                   # Prettier config
+  amplify.yml                   # AWS Amplify deployment config
+  README.md                     # Project documentation
 
 Core logic specs
 
-Pool math (constant-product):
+Routing: Handled by Swap-API service, which:
+- Discovers pools across HumbleSwap, Nomadex, and swap200 contracts
+- Finds best routes (direct or multi-hop)
+- Handles ARC200 token wrapping/unwrapping automatically
+- Returns unsigned transactions for execution
 
-amountOut = (amountIn * 997 * rOut) / (rIn*1000 + amountIn*997) style fee model configurable per adapter.
+Token handling:
+- Supports both ASA (Algorand Standard Assets) and ARC200 tokens
+- Uses token IDs (numbers) for identification
+- Converts between display units and base units (10^decimals)
+- Swap-API automatically handles wrap/unwrap for ASA↔ARC200 conversions
 
-Compute price impact vs mid-price.
+Pool selection:
+- Users can optionally select a specific pool
+- If no pool selected, Swap-API auto-discovers best route
+- Pool configs in pools.json define available pools for UI display
 
-Slippage: apply slippageBps guard to produce “min amount out” (shown but not needed for off-chain).
+Swap execution:
+- Receives unsigned transactions from Swap-API (base64 encoded)
+- Decodes transactions and signs via wallet
+- Submits signed transactions as atomic group
+- Waits for confirmation before showing success
 
-Two-hop: simulate sequentially with output of hop1 as input to hop2; consider fee on each hop.
-
-Cross-DEX two-hop supported (e.g., first hop on Humble, second hop on Pact).
-
-Decimals: use a fixed-precision BigInt utility (e.g., scale by 10^decimals).
-
-Tests (Vitest)
-
-Unit tests for:
-
-getAmountOut correctness vs hand-computed examples.
-
-bestQuote picks higher amountOut when direct vs two-hop compete.
-
-Price impact increases when reserves shrink.
-
-Test with mock pools for VOI/USDC, USDC/BUIDL on both DEXes.
+Config system:
+- All configuration in JSON files under `/config`
+- Loaded at runtime via fetch API
+- Supports token whitelisting via app.json
+- Pool filtering based on available tokens
 
 Commands
 
-pnpm i
+npm install (or pnpm install)
 
-pnpm -w run dev (concurrently run apps/api on 3001 and apps/web on 3000)
+npm run dev (runs Vite dev server on port 3999)
 
-pnpm -w run test
+npm run build (builds for production to dist/)
 
-Non-goals (explicitly exclude for MVP)
+npm run preview (preview production build)
 
-On-chain execution / router contract
+npm run lint (run ESLint)
+
+npm run format (format with Prettier)
+
+npm run type-check (TypeScript type checking)
+
+Features Implemented (beyond original MVP scope)
+
+✅ On-chain execution: Full swap execution via wallet integration
+✅ Wallet connect: Real wallet integration with @txnlab/use-wallet-react
+✅ Pool selection: Users can select specific pools
+✅ Swap-API integration: Leverages external routing service
+✅ Multi-DEX support: HumbleSwap, Nomadex, and swap200 contracts
+✅ ARC200 support: Automatic wrap/unwrap handling
+
+Non-goals (explicitly exclude)
 
 Limit orders, RFQ, MEV protection
 
-Real wallet connect (add later); for now, read-only quoting
+Custom routing algorithm (uses Swap-API instead)
+
+Separate API server (calls Swap-API directly from frontend)
 
 Acceptance criteria
 
-With only mocks configured, entering From: VOI, To: BUIDL, Amount: 100 returns a valid Quote and a visible route card.
+✅ With Swap-API configured, entering From: VOI, To: USDC, Amount: 100 returns a valid Quote and a visible route card.
 
-Toggling “Compare routes” shows at least 3 alternative simulated routes with amounts.
+✅ Route display shows DEX name, pool ID, exchange rate, and price impact.
 
-Swapping token direction updates the quote and preserves UX polish (loading, errors, disabled states).
+✅ Pool selection dropdown appears when multiple pools are available.
 
-Stretch (if time remains)
+✅ Wallet connection works with Pera, Defly, Lute, and other Algorand wallets.
 
-Add a “copy shareable quote URL” feature (/quote?...) from the UI.
+✅ Swap execution signs and submits transactions successfully.
+
+✅ Swapping token direction updates the quote and preserves UX polish (loading, errors, disabled states).
+
+✅ Config files are loaded from `/config` directory at runtime.
+
+✅ Token list is filtered by available pools or whitelist configuration.
+
+Current Implementation Status
+
+✅ Single-page React app with Vite
+✅ Swap-API integration for routing
+✅ Wallet connection and swap execution
+✅ Config-based architecture
+✅ Pool selection UI
+✅ Route display with breakdown
+✅ Price impact warnings
+✅ Error handling and loading states
+
+Future Enhancements (stretch goals)
+
+Add a "copy shareable quote URL" feature from the UI.
 
 Save last selections in localStorage.
 
-Build now.
+Add route comparison table (currently shows empty comparedRoutes).
+
+Add transaction history tracking.
+
+Add price charts and analytics.

@@ -143,10 +143,22 @@ function App() {
     const matchingPools = pools.filter((pool) => {
       // Check humbleswap pools
       if (pool.tokens.underlyingToWrapped) {
-        const underlyingIds = Object.keys(pool.tokens.underlyingToWrapped).map(
-          Number
-        );
-        return underlyingIds.includes(fromId) && underlyingIds.includes(toId);
+        // Collect all token IDs that can be used in this pool
+        const tokenIds = new Set<number>();
+        
+        // Add underlying token IDs (keys of underlyingToWrapped)
+        Object.keys(pool.tokens.underlyingToWrapped).forEach((id) => {
+          tokenIds.add(Number(id));
+        });
+        
+        // Add wrapped pair token IDs
+        if (pool.tokens.wrappedPair) {
+          tokenIds.add(pool.tokens.wrappedPair.tokA);
+          tokenIds.add(pool.tokens.wrappedPair.tokB);
+        }
+        
+        // Check if both from and to tokens are in the pool
+        return tokenIds.has(fromId) && tokenIds.has(toId);
       }
       // Check nomadex pools
       if (pool.tokens.tokA && pool.tokens.tokB) {

@@ -1,11 +1,11 @@
 # Ally - Voi DEX Aggregator
 
-A simple & intuitive DEX aggregator for Voi that finds the best routes across HumbleSwap and PactFi.
+A simple & intuitive DEX aggregator for Voi that finds the best routes across HumbleSwap and nomadex.
 
 ## Features
 
 - **Simple Interface**: One input, one output, best route clearly shown
-- **Multi-DEX Support**: HumbleSwap, PactFi, and Swap-API (swap200 contracts) integration
+- **Multi-DEX Support**: HumbleSwap, nomadex, and Swap-API (swap200 contracts) integration
 - **Smart Routing**: Direct routes and two-hop routes via common intermediates
 - **Price Impact Analysis**: Real-time price impact calculations
 - **Route Comparison**: Compare multiple routes side-by-side
@@ -177,7 +177,7 @@ cp .env.example .env
 Key variables:
 - `VOI_TOKEN_LIST`: Path to token list JSON
 - `HUMBLE_INDEXER_URL`: HumbleSwap API endpoint
-- `PACT_INDEXER_URL`: PactFi API endpoint
+- `PACT_INDEXER_URL`: nomadex API endpoint
 - `SWAP_API_URL`: Swap-API base URL (default: https://swap-api-iota.vercel.app)
 - `API_PORT`: API server port (default: 3001)
 - `WEB_PORT`: Web app port (default: 3000)
@@ -187,7 +187,7 @@ Key variables:
 The MVP includes mock pool data for development:
 
 - **HumbleSwap**: VOI/USDC, USDC/BUIDL, VOI/BUIDL pools
-- **PactFi**: VOI/USDC, USDC/BUIDL, VOI/WVOI pools
+- **nomadex**: VOI/USDC, USDC/BUIDL, VOI/WVOI pools
 
 ## Token List
 
