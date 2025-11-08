@@ -58,6 +58,7 @@ function App() {
         siteName: 'Ally',
       },
     },
+    WalletId.DEFLY,
     {
       id: WalletId.WALLETCONNECT,
       options: {
