@@ -1,0 +1,11 @@
+# Allow config JSON files to be served directly (must come before catch-all)
+# Status 200 = rewrite (serve file without redirect)
+/config/pools.json    /config/pools.json    200
+/config/tokens.json    /config/tokens.json    200
+/config/api.json    /config/api.json    200
+/config/app.json    /config/app.json    200
+
+# SPA fallback - redirect all other routes to index.html
+# Status 200 = rewrite (serve index.html for SPA routing)
+/*    /index.html   200
+

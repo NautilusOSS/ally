@@ -1,0 +1,30 @@
+[
+  {
+    "address": "VOI",
+    "symbol": "VOI",
+    "name": "Voi",
+    "decimals": 6,
+    "logoURI": "https://voi.network/logo.png"
+  },
+  {
+    "address": "USDC",
+    "symbol": "USDC",
+    "name": "USD Coin",
+    "decimals": 6,
+    "logoURI": "https://example.com/usdc.png"
+  },
+  {
+    "address": "BUIDL",
+    "symbol": "BUIDL",
+    "name": "BUIDL Token",
+    "decimals": 6,
+    "logoURI": "https://example.com/buidl.png"
+  },
+  {
+    "address": "WVOI",
+    "symbol": "WVOI",
+    "name": "Wrapped Voi",
+    "decimals": 6,
+    "logoURI": "https://example.com/wvoi.png"
+  }
+]

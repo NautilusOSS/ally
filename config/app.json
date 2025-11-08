@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "Ally",
+    "description": "DEX Aggregator for Voi Network",
+    "version": "1.0.0"
+  },
+  "ui": {
+    "defaultSlippageTolerance": 0.01,
+    "slippageToleranceOptions": [0.005, 0.01, 0.02, 0.03, 0.05],
+    "priceImpactWarningThreshold": 0.05,
+    "priceImpactDangerThreshold": 0.10,
+    "defaultAmountDecimals": 6
+  },
+  "routing": {
+    "commonIntermediateTokens": ["VOI", "wVOI", "USDC", "aUSDC", "UNIT"],
+    "maxHops": 2,
+    "enableCrossDexRouting": true
+  },
+  "dexes": {
+    "humbleswap": {
+      "name": "HumbleSwap",
+      "displayName": "HUMBLE",
+      "feePct": 0.3,
+      "enabled": true
+    },
+    "nomadex": {
+      "name": "Nomadex",
+      "displayName": "PACT",
+      "feePct": 0.25,
+      "enabled": true
+    },
+    "swapApi": {
+      "name": "Swap API",
+      "displayName": "SWAP_API",
+      "feePct": 0.3,
+      "enabled": true,
+      "autoDiscoverPools": true
+    }
+  }
+}
+

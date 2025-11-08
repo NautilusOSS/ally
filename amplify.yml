@@ -1,0 +1,51 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "=== Amplify.yml is being used ==="
+        - 'echo "Current directory:" && pwd'
+        - echo "Listing files"
+        - ls -la
+        - echo "=== Starting preBuild phase ==="
+        - npm ci
+    build:
+      commands:
+        - npm run build
+        - |
+          # Verify config files are copied to dist
+          echo "Checking if config files exist in dist..."
+          if [ ! -d "dist/config" ]; then
+            echo "dist/config directory not found, creating it..."
+            mkdir -p dist/config
+          fi
+          # Ensure config files are in dist/config
+          if [ -d "public/config" ]; then
+            echo "Copying config files from public/config to dist/config..."
+            cp -r public/config/* dist/config/ 2>/dev/null || true
+          fi
+          # Also check if config files exist in root config directory
+          if [ -d "config" ] && [ ! -f "dist/config/api.json" ]; then
+            echo "Copying config files from config/ to dist/config..."
+            cp -r config/*.json dist/config/ 2>/dev/null || true
+          fi
+          # List files in dist/config to verify
+          echo "Files in dist/config"
+          ls -la dist/config/ || echo "dist/config directory does not exist"
+    postBuild:
+      commands:
+        - |
+          echo "Post-build verification:"
+          echo "Checking dist directory structure..."
+          ls -la dist/ || echo "dist directory does not exist"
+          echo ""
+          echo "Checking dist/config directory..."
+          ls -la dist/config/ || echo "dist/config directory does not exist"
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+

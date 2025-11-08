@@ -1,0 +1,32 @@
+{
+  "endpoints": {
+    "swapApi": {
+      "baseUrl": "https://swap-api-iota.vercel.app",
+      "timeout": 10000,
+      "endpoints": {
+        "quote": "/quote",
+        "pool": "/pool",
+        "health": "/health"
+      }
+    },
+    "voiApi": {
+      "baseUrl": "https://voi-mainnet-mimirapi.nftnavigator.xyz",
+      "endpoints": {
+        "pools": "/dex/pools"
+      }
+    },
+    "localApi": {
+      "baseUrl": "http://localhost:3001",
+      "endpoints": {
+        "quote": "/api/quote",
+        "swapApiQuote": "/api/quote/swap-api",
+        "health": "/api/health"
+      }
+    }
+  },
+  "cache": {
+    "poolCacheDuration": 30000,
+    "enabled": true
+  }
+}
+
