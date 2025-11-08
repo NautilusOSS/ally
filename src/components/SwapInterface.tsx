@@ -39,6 +39,7 @@ interface SwapInterfaceProps {
   // Wallet & Swap
   walletAddress: string | null;
   onConnectWallet: () => void;
+  onDisconnectWallet?: () => void;
 }
 
 export default function SwapInterface({
@@ -61,8 +62,9 @@ export default function SwapInterface({
   onToggleCompare,
   walletAddress,
   onConnectWallet,
+  onDisconnectWallet,
 }: SwapInterfaceProps) {
-  const { activeAccount, signTransactions, algodClient } = useWallet();
+  const { activeAccount, signTransactions, algodClient, activeWallet } = useWallet();
   const isWalletConnected = !!activeAccount;
   const displayAddress = activeAccount?.address || walletAddress;
 
@@ -274,6 +276,23 @@ export default function SwapInterface({
     // Clear quote when swapping
     setQuote(null);
     setUnsignedTransactions([]);
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      if (activeWallet?.disconnect) {
+        await activeWallet.disconnect();
+      }
+      if (onDisconnectWallet) {
+        onDisconnectWallet();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to disconnect wallet'
+      );
+    }
   };
 
   const handleSwap = async () => {
@@ -788,11 +807,33 @@ export default function SwapInterface({
                   <div>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-gray-600">Connected:</span>
-                      <span className="text-sm font-mono text-gray-900">
-                        {displayAddress
-                          ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}`
-                          : 'Connected'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono text-gray-900">
+                          {displayAddress
+                            ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}`
+                            : 'Connected'}
+                        </span>
+                        <button
+                          onClick={handleDisconnect}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-gray-100"
+                          title="Disconnect wallet"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
                       Get a new quote to receive unsigned transactions for
@@ -809,11 +850,33 @@ export default function SwapInterface({
                   <div>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-gray-600">Connected:</span>
-                      <span className="text-sm font-mono text-gray-900">
-                        {displayAddress
-                          ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}`
-                          : 'Connected'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono text-gray-900">
+                          {displayAddress
+                            ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}`
+                            : 'Connected'}
+                        </span>
+                        <button
+                          onClick={handleDisconnect}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-gray-100"
+                          title="Disconnect wallet"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <button
                       onClick={handleSwap}

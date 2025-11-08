@@ -45,7 +45,13 @@ export default function WalletConnectModal({
     }
   };
 
-  const getWalletIcon = (walletId: string) => {
+  const getWalletIcon = (wallet: any) => {
+    // Use metadata icon if available
+    if (wallet.metadata && wallet.metadata.icon) {
+      return wallet.metadata.icon;
+    }
+    // Fallback to letter-based icon
+    const walletId = wallet.id || '';
     const id = walletId.toLowerCase();
     if (id.includes('pera')) return 'P';
     if (id.includes('defly')) return 'D';
@@ -59,6 +65,10 @@ export default function WalletConnectModal({
     if (id.includes('defly')) return 'from-purple-500 to-purple-600';
     if (id.includes('lute')) return 'from-green-500 to-green-600';
     return 'from-gray-500 to-gray-600';
+  };
+
+  const hasMetadataIcon = (wallet: any) => {
+    return wallet.metadata && wallet.metadata.icon;
   };
 
   const getWalletDescription = (wallet: any) => {
@@ -147,13 +157,23 @@ export default function WalletConnectModal({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 bg-gradient-to-br ${getWalletColor(
-                        wallet.id
-                      )} rounded-lg flex items-center justify-center text-white font-bold`}
-                    >
-                      {getWalletIcon(wallet.id)}
-                    </div>
+                    {hasMetadataIcon(wallet) ? (
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img
+                          src={getWalletIcon(wallet)}
+                          alt={getWalletName(wallet)}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`w-10 h-10 bg-gradient-to-br ${getWalletColor(
+                          wallet.id
+                        )} rounded-lg flex items-center justify-center text-white font-bold`}
+                      >
+                        {getWalletIcon(wallet)}
+                      </div>
+                    )}
                     <div className="text-left">
                       <div className="font-medium text-gray-900">
                         {getWalletName(wallet)}

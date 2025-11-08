@@ -14,6 +14,7 @@ import {
   WalletManager,
   WalletId,
   NetworkConfigBuilder,
+  SupportedWallet,
 } from '@txnlab/use-wallet-react';
 import WalletConnectModal from './components/WalletConnectModal';
 import SwapInterface from './components/SwapInterface';
@@ -49,9 +50,28 @@ function App() {
       caipChainId: 'algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n',
     })
     .build();
-
+  const wallets = [
+    {
+      id: WalletId.LUTE,
+      options: {
+        siteName: 'Ally',
+      },
+    },
+    {
+      id: WalletId.WALLETCONNECT,
+      options: {
+        projectId: 'cd7fe0125d88d239da79fa286e6de2a8',
+        metadata: {
+          name: 'Ally',
+          description: 'DEX Aggregator for Voi Network',
+          url: 'https://ally.nautilus.sh',
+          icons: ['https://ally.nautilus.sh/logo.png'],
+        },
+      },
+    },
+  ];
   const manager = new WalletManager({
-    wallets: [WalletId.LUTE],
+    wallets: wallets as SupportedWallet[],
     networks,
     defaultNetwork: 'voi-mainnet',
   });
@@ -93,7 +113,7 @@ function App() {
 
         // Filter tokens based on whitelist (if provided) or pool availability
         let availableTokens = tokensData;
-        
+
         // Apply whitelist if configured
         if (appData.tokenWhitelist && appData.tokenWhitelist.length > 0) {
           const whitelistSet = new Set(
@@ -110,7 +130,7 @@ function App() {
             tokenIdsInPools.has(t.tokenId)
           );
         }
-        
+
         setTokens(availableTokens);
 
         // Set default token info
@@ -145,18 +165,18 @@ function App() {
       if (pool.tokens.underlyingToWrapped) {
         // Collect all token IDs that can be used in this pool
         const tokenIds = new Set<number>();
-        
+
         // Add underlying token IDs (keys of underlyingToWrapped)
         Object.keys(pool.tokens.underlyingToWrapped).forEach((id) => {
           tokenIds.add(Number(id));
         });
-        
+
         // Add wrapped pair token IDs
         if (pool.tokens.wrappedPair) {
           tokenIds.add(pool.tokens.wrappedPair.tokA);
           tokenIds.add(pool.tokens.wrappedPair.tokB);
         }
-        
+
         // Check if both from and to tokens are in the pool
         return tokenIds.has(fromId) && tokenIds.has(toId);
       }
@@ -181,15 +201,17 @@ function App() {
     }
   }, [fromTokenInfo, toTokenInfo, pools]);
 
-  const handleWalletConnect = async (walletType: 'pera' | 'defly' | 'other') => {
+  const handleWalletConnect = async (
+    walletType: 'pera' | 'defly' | 'other'
+  ) => {
     try {
       if (typeof window === 'undefined' || !(window as any).algorand) {
         throw new Error(
           walletType === 'pera'
             ? 'Pera Wallet not found. Please install the Pera Wallet extension.'
             : walletType === 'defly'
-            ? 'Defly Wallet not found. Please install the Defly Wallet extension.'
-            : 'No Algorand wallet found. Please install Pera Wallet, Defly Wallet, or another Algorand wallet extension.'
+              ? 'Defly Wallet not found. Please install the Defly Wallet extension.'
+              : 'No Algorand wallet found. Please install Pera Wallet, Defly Wallet, or another Algorand wallet extension.'
         );
       }
 
@@ -211,6 +233,10 @@ function App() {
     }
   };
 
+  const handleWalletDisconnect = () => {
+    setWalletAddress(null);
+  };
+
   const handleSwapTokens = () => {
     const tempToken = fromToken;
     const tempTokenInfo = fromTokenInfo;
@@ -224,9 +250,7 @@ function App() {
     setFromToken(tokenId);
     const token = tokens.find(
       (t) =>
-        t.tokenId === tokenId ||
-        t.address === tokenId ||
-        t.symbol === tokenId
+        t.tokenId === tokenId || t.address === tokenId || t.symbol === tokenId
     );
     if (token) setFromTokenInfo(token);
   };
@@ -235,9 +259,7 @@ function App() {
     setToToken(tokenId);
     const token = tokens.find(
       (t) =>
-        t.tokenId === tokenId ||
-        t.address === tokenId ||
-        t.symbol === tokenId
+        t.tokenId === tokenId || t.address === tokenId || t.symbol === tokenId
     );
     if (token) setToTokenInfo(token);
   };
@@ -264,6 +286,7 @@ function App() {
         onToggleCompare={() => setShowCompare(!showCompare)}
         walletAddress={walletAddress}
         onConnectWallet={() => setShowWalletModal(true)}
+        onDisconnectWallet={handleWalletDisconnect}
       />
 
       {/* Wallet Selection Modal */}
@@ -278,4 +301,3 @@ function App() {
 }
 
 export default App;
-
