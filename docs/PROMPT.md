@@ -52,7 +52,7 @@ Route (e.g., HumbleSwap direct, or nomadex: VOI→USDC→BUIDL)
 
 Estimated price impact and route breakdown
 
-Link-style secondary options: “Compare routes”
+Button to show/hide route breakdown: "Show Routes" / "Hide Routes"
 
 Empty state copy: “Pick tokens, enter an amount, and let Ally find the best route.”
 
@@ -120,6 +120,7 @@ components/SwapInterface.tsx: Main swap UI component that:
 - Shows available pools (optional pool selection)
 - Calls Swap-API /quote endpoint
 - Displays quote results with route breakdown
+- Expandable route cards showing detailed pool information (DEX, pool ID, input/output amounts)
 - Handles wallet connection and swap execution
 - Shows route comparison table
 
@@ -237,6 +238,7 @@ Features Implemented (beyond original MVP scope)
 ✅ Swap-API integration: Leverages external routing service
 ✅ Multi-DEX support: HumbleSwap, Nomadex, and swap200 contracts
 ✅ ARC200 support: Automatic wrap/unwrap handling
+✅ Expandable route cards: Collapsible cards showing detailed pool breakdown (DEX, pool ID, input/output amounts) with visual expand/collapse indicators
 
 Non-goals (explicitly exclude)
 
@@ -272,6 +274,7 @@ Current Implementation Status
 ✅ Config-based architecture
 ✅ Pool selection UI
 ✅ Route display with breakdown
+✅ Expandable route cards with detailed pool information
 ✅ Price impact warnings
 ✅ Error handling and loading states
 
@@ -281,8 +284,31 @@ Add a "copy shareable quote URL" feature from the UI.
 
 Save last selections in localStorage.
 
-Add route comparison table (currently shows empty comparedRoutes).
+Enhance route comparison table (currently shows basic comparedRoutes, could be expanded with more detailt s).
 
 Add transaction history tracking.
 
 Add price charts and analytics.
+
+---
+
+## Incremental Update Tracking
+
+**Last Commit Processed:** `359c3ac0e48321e633193a0a10bf5e8d9613d4dd`
+
+**Commit Details:**
+- **Author:** RedDev677067
+- **Date:** Sat Nov 8 11:04:43 2025 -0700
+- **Message:** feat(swap): enhance route breakdown with expandable cards
+- **Description:**
+  - Add expandable route cards with detailed pool information
+  - Calculate exchange rate from display amounts for accuracy
+  - Improve route breakdown UI with collapsible cards showing:
+    - Pool ID, DEX, input/output amounts
+    - Visual indicators for expanded/collapsed state
+  - Reset expanded cards when fetching new quotes
+  - Fix null checks for swapApiData properties
+  - Update button text from "Compare Routes" to "Show Routes"
+  - Support both swapApiData route pools and comparedRoutes display
+
+*Note: When processing incremental updates, start from this commit and work forward through the git history.*
