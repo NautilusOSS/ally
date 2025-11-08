@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   loadTokensConfig,
   loadApiConfig,
@@ -37,21 +37,25 @@ function App() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
 
-  const networks = new NetworkConfigBuilder()
-    .addNetwork('voi-mainnet', {
-      algod: {
-        token: '',
-        baseServer: 'https://mainnet-api.voi.nodely.dev',
-        port: '',
-      },
-      isTestnet: false,
-      genesisHash: 'r20fSQI8gWe/kFZziNonSPCXLwcQmH/nxROvnnueWOk=',
-      genesisId: 'voimain-v1.0',
-      caipChainId: 'algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n',
-    })
-    .build();
+  // Memoize networks configuration to prevent recreation on every render
+  const networks = useMemo(() => {
+    return new NetworkConfigBuilder()
+      .addNetwork('voi-mainnet', {
+        algod: {
+          token: '',
+          baseServer: 'https://mainnet-api.voi.nodely.dev',
+          port: '',
+        },
+        isTestnet: false,
+        genesisHash: 'r20fSQI8gWe/kFZziNonSPCXLwcQmH/nxROvnnueWOk=',
+        genesisId: 'voimain-v1.0',
+        caipChainId: 'algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n',
+      })
+      .build();
+  }, []);
 
-  const wallets = [
+  // Memoize wallets configuration to prevent recreation on every render
+  const wallets = useMemo(() => [
     {
       id: WalletId.LUTE,
       options: {
@@ -69,13 +73,16 @@ function App() {
         }
       },
     },
-  ];
+  ], []);
 
-  const manager = new WalletManager({
-    wallets: wallets as SupportedWallet[],
-    networks,
-    defaultNetwork: 'voi-mainnet',
-  });
+  // Memoize WalletManager to prevent multiple initializations
+  const manager = useMemo(() => {
+    return new WalletManager({
+      wallets: wallets as SupportedWallet[],
+      networks,
+      defaultNetwork: 'voi-mainnet',
+    });
+  }, [wallets, networks]);
 
   // Load configs on mount
   useEffect(() => {
