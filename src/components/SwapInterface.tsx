@@ -74,6 +74,9 @@ export default function SwapInterface({
     []
   );
   const [swapping, setSwapping] = useState(false);
+  const [expandedRouteCards, setExpandedRouteCards] = useState<Set<number>>(
+    new Set()
+  );
 
   // Filter out fromToken from available tokens for toToken selection
   const availableToTokens = useMemo(
@@ -242,9 +245,13 @@ export default function SwapInterface({
         timestamp: Date.now(),
       };
 
+      // Calculate exchange rate from display amounts (accounting for decimals)
+      const exchangeRate =
+        parseFloat(amountOutDisplay) / parseFloat(amountInDisplay);
+
       // Store additional swap-api data for display
       (quoteData as any).swapApiData = {
-        rate: swapApiResponse.quote.rate,
+        rate: exchangeRate,
         poolId: swapApiResponse.poolId,
         route: swapApiResponse.route,
       };
@@ -253,6 +260,8 @@ export default function SwapInterface({
       setUnsignedTransactions(swapApiResponse.unsignedTransactions || []);
 
       setQuote(quoteData);
+      // Reset expanded route cards when new quote is fetched
+      setExpandedRouteCards(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -544,7 +553,7 @@ export default function SwapInterface({
                     </span>
                   </div>
 
-                  {(quote as any).swapApiData?.poolId && (
+                  {(quote as any).swapApiData?.poolId != null && (
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-gray-700">
                         Pool ID:
@@ -555,7 +564,7 @@ export default function SwapInterface({
                     </div>
                   )}
 
-                  {(quote as any).swapApiData?.rate && (
+                  {(quote as any).swapApiData?.rate != null && (
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-gray-700">
                         Exchange Rate:
@@ -591,40 +600,6 @@ export default function SwapInterface({
                       {quote.feesEstimated.lpFeePct.toFixed(2)}% LP fee
                     </span>
                   </div>
-
-                  {/* Multi-pool route breakdown */}
-                  {(quote as any).swapApiData?.route?.pools &&
-                    (quote as any).swapApiData.route.pools.length > 1 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="text-xs font-medium text-gray-600 mb-2">
-                          Route Breakdown:
-                        </div>
-                        {(quote as any).swapApiData.route.pools.map(
-                          (pool: any, index: number) => {
-                            const poolInputDisplay = (
-                              parseFloat(pool.inputAmount) /
-                              Math.pow(10, fromTokenInfo?.decimals || 0)
-                            ).toFixed(6);
-                            const poolOutputDisplay = (
-                              parseFloat(pool.outputAmount) /
-                              Math.pow(10, toTokenInfo?.decimals || 0)
-                            ).toFixed(6);
-                            return (
-                              <div
-                                key={index}
-                                className="text-xs text-gray-500 mb-1"
-                              >
-                                {pool.dex} Pool {pool.poolId}:{' '}
-                                {poolInputDisplay}{' '}
-                                {fromTokenInfo?.symbol || fromToken} →{' '}
-                                {poolOutputDisplay}{' '}
-                                {toTokenInfo?.symbol || toToken}
-                              </div>
-                            );
-                          }
-                        )}
-                      </div>
-                    )}
                 </div>
 
                 {/* Warnings */}
@@ -646,31 +621,143 @@ export default function SwapInterface({
                   onClick={onToggleCompare}
                   className="btn-secondary w-full"
                 >
-                  {showCompare ? 'Hide' : 'Compare'} Routes
+                  {showCompare ? 'Hide' : 'Show'} Routes
                 </button>
 
-                {/* Compare Routes Table */}
-                {showCompare && quote.comparedRoutes && (
+                {/* Route Breakdown Section */}
+                {showCompare && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h4 className="font-medium text-gray-700 mb-3">
-                      All Routes
+                      Route Breakdown
                     </h4>
-                    <div className="space-y-2">
-                      {quote.comparedRoutes.map((route, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
-                        >
-                          <span className="text-sm font-medium text-gray-600">
-                            {route.label}
-                          </span>
-                          <span className="text-sm font-mono text-gray-900">
-                            {parseFloat(route.amountOut).toFixed(6)}{' '}
-                            {toTokenInfo?.symbol || toToken}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    {/* Multi-pool route breakdown */}
+                    {(quote as any).swapApiData?.route?.pools &&
+                    (quote as any).swapApiData.route.pools.length > 0 ? (
+                      <div className="space-y-2">
+                        {(quote as any).swapApiData.route.pools.map(
+                          (pool: any, index: number) => {
+                            const poolInputDisplay = (
+                              parseFloat(pool.inputAmount) /
+                              Math.pow(10, fromTokenInfo?.decimals || 0)
+                            ).toFixed(6);
+                            const poolOutputDisplay = (
+                              parseFloat(pool.outputAmount) /
+                              Math.pow(10, toTokenInfo?.decimals || 0)
+                            ).toFixed(6);
+                            const isExpanded = expandedRouteCards.has(index);
+                            const toggleExpanded = () => {
+                              const newExpanded = new Set(expandedRouteCards);
+                              if (isExpanded) {
+                                newExpanded.delete(index);
+                              } else {
+                                newExpanded.add(index);
+                              }
+                              setExpandedRouteCards(newExpanded);
+                            };
+
+                            return (
+                              <div
+                                key={index}
+                                className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+                              >
+                                <button
+                                  onClick={toggleExpanded}
+                                  className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                                >
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="font-medium text-gray-700">
+                                      {pool.dex} Pool {pool.poolId}
+                                    </span>
+                                    <span className="text-gray-500">
+                                      {poolInputDisplay}{' '}
+                                      {fromTokenInfo?.symbol || fromToken} →{' '}
+                                      {poolOutputDisplay}{' '}
+                                      {toTokenInfo?.symbol || toToken}
+                                    </span>
+                                  </div>
+                                  <svg
+                                    className={`h-4 w-4 text-gray-500 transition-transform ${
+                                      isExpanded ? 'rotate-180' : ''
+                                    }`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </button>
+                                {isExpanded && (
+                                  <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
+                                    <div className="space-y-1 text-xs">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">
+                                          Pool ID:
+                                        </span>
+                                        <span className="font-mono text-gray-900">
+                                          {pool.poolId}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">
+                                          DEX:
+                                        </span>
+                                        <span className="text-gray-900">
+                                          {pool.dex}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">
+                                          Input Amount:
+                                        </span>
+                                        <span className="font-mono text-gray-900">
+                                          {poolInputDisplay}{' '}
+                                          {fromTokenInfo?.symbol || fromToken}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">
+                                          Output Amount:
+                                        </span>
+                                        <span className="font-mono text-gray-900">
+                                          {poolOutputDisplay}{' '}
+                                          {toTokenInfo?.symbol || toToken}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    ) : quote.comparedRoutes ? (
+                      <div className="space-y-2">
+                        {quote.comparedRoutes.map((route, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
+                          >
+                            <span className="text-sm font-medium text-gray-600">
+                              {route.label}
+                            </span>
+                            <span className="text-sm font-mono text-gray-900">
+                              {parseFloat(route.amountOut).toFixed(6)}{' '}
+                              {toTokenInfo?.symbol || toToken}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        No route breakdown available
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
