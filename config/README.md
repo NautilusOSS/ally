@@ -35,9 +35,15 @@ Known pool configurations.
 Config files are served from `/public/config/` and loaded at runtime:
 
 ```typescript
-import { loadTokensConfig, loadApiConfig, loadAppConfig } from '../lib/config';
+import { 
+  loadTokensConfig, 
+  loadApiConfig, 
+  loadAppConfig, 
+  loadPoolsConfig 
+} from '../lib/config';
 
 const tokens = await loadTokensConfig();
+const pools = await loadPoolsConfig();
 const apiConfig = await loadApiConfig();
 const appConfig = await loadAppConfig();
 ```
@@ -54,7 +60,7 @@ import apiConfig from '../config/api.json';
 
 1. Add token entry to `config/tokens.json`
 2. Include `tokenId` for swap-api integration
-3. Copy updated file to `apps/web/public/config/tokens.json`
+3. Copy updated file to `public/config/tokens.json` (or it will be copied automatically during build)
 
 ## Environment-Specific Configs
 

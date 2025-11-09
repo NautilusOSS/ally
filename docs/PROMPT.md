@@ -156,6 +156,7 @@ ally/
     index.css                   # Global styles
     components/
       SwapInterface.tsx         # Main swap UI
+      VersionDisplay.tsx        # Version display component
       WalletConnectModal.tsx    # Wallet connection modal
     lib/
       config.ts                 # Config loader utilities
@@ -173,6 +174,9 @@ ally/
       app.json
     _redirects                  # Netlify/Amplify redirects
   dist/                         # Build output
+  scripts/                      # Build and utility scripts
+    setup-version-management.sh # Version management setup
+    update-version.cjs          # Version update script
   package.json                  # Dependencies and scripts
   vite.config.ts                # Vite configuration
   tsconfig.json                 # TypeScript config
@@ -239,6 +243,7 @@ Features Implemented (beyond original MVP scope)
 ✅ Multi-DEX support: HumbleSwap, Nomadex, and swap200 contracts
 ✅ ARC200 support: Automatic wrap/unwrap handling
 ✅ Expandable route cards: Collapsible cards showing detailed pool breakdown (DEX, pool ID, input/output amounts) with visual expand/collapse indicators
+✅ Version management: Automated version tracking with VersionDisplay component and prebuild scripts
 
 Non-goals (explicitly exclude)
 
@@ -277,6 +282,8 @@ Current Implementation Status
 ✅ Expandable route cards with detailed pool information
 ✅ Price impact warnings
 ✅ Error handling and loading states
+✅ VersionDisplay component showing app version
+✅ Automated version management with prebuild scripts
 
 Future Enhancements (stretch goals)
 

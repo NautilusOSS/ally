@@ -16,9 +16,11 @@ A simple & intuitive DEX aggregator for Voi that finds the best routes across Hu
 - **Frontend**: Vite + React 18 with TypeScript
 - **Styling**: Tailwind CSS
 - **Wallet Integration**: @txnlab/use-wallet-react for Algorand/Voi wallet connections
+  - Supports Pera, Defly, Lute, and other Algorand wallets via WalletConnect
 - **Build Tool**: Vite
 - **Package Manager**: npm
 - **Deployment**: AWS Amplify
+- **Version Management**: Automated version tracking with prebuild scripts
 
 ## Quick Start
 
@@ -50,6 +52,7 @@ ally/
 ├── src/
 │   ├── components/          # React components
 │   │   ├── SwapInterface.tsx
+│   │   ├── VersionDisplay.tsx
 │   │   └── WalletConnectModal.tsx
 │   ├── lib/
 │   │   └── config.ts        # Configuration loading utilities
@@ -63,9 +66,16 @@ ally/
 │       ├── pools.json       # DEX pool configurations
 │       └── tokens.json      # Token list
 ├── config/                  # Source config files (copied to public/)
+│   └── README.md            # Configuration documentation
+├── scripts/                 # Build and utility scripts
+│   ├── setup-version-management.sh
+│   └── update-version.cjs
+├── docs/                    # Documentation
+│   └── PROMPT.md            # Development prompt
 ├── dist/                    # Production build output
 ├── vite.config.ts           # Vite configuration
 ├── tailwind.config.cjs      # Tailwind CSS configuration
+├── amplify.yml              # AWS Amplify deployment config
 └── package.json
 ```
 
@@ -84,10 +94,21 @@ These files are loaded at runtime and can be updated without rebuilding the appl
 
 ### Wallet Integration
 
-The app uses `@txnlab/use-wallet-react` for wallet connections. Currently supports:
+The app uses `@txnlab/use-wallet-react` for wallet connections. Supports:
+- **Pera Wallet**: Algorand wallet integration
+- **Defly Wallet**: Mobile-first Algorand wallet
 - **Lute Wallet**: Primary wallet integration via WalletConnect
+- **Other Algorand wallets**: Via WalletConnect protocol
 
 The app is configured for the Voi mainnet network.
+
+### Version Management
+
+The project includes automated version management:
+- Version is displayed in the UI via the `VersionDisplay` component
+- Version is automatically incremented (patch version) before each build via `prebuild` script
+- Version is stored in `package.json` and exposed via `VITE_APP_VERSION` environment variable
+- Setup script available: `npm run setup-version`
 
 ### Adding New Tokens
 
@@ -125,6 +146,19 @@ The app integrates with multiple DEXes on the Voi network:
 - **Swap-API**: ARC200 token swaps via swap200 contracts
 
 Pool configurations are defined in `config/pools.json` and can be updated without code changes.
+
+## Features Implemented
+
+- ✅ On-chain execution: Full swap execution via wallet integration
+- ✅ Wallet connect: Real wallet integration with multiple wallet support
+- ✅ Pool selection: Users can select specific pools
+- ✅ Swap-API integration: Leverages external routing service
+- ✅ Multi-DEX support: HumbleSwap, Nomadex, and swap200 contracts
+- ✅ ARC200 support: Automatic wrap/unwrap handling
+- ✅ Expandable route cards: Collapsible cards showing detailed pool breakdown
+- ✅ Route comparison: Side-by-side comparison of available routes
+- ✅ Version display: Shows app version in UI
+- ✅ Automated version management: Patch version auto-increments on build
 
 ## Contributing
 
