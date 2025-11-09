@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type {
   TokenConfig,
   PoolConfig,
@@ -7,6 +7,7 @@ import type {
 } from '../lib/config';
 import { useWallet, WalletId } from '@txnlab/use-wallet-react';
 import algosdk from 'algosdk';
+import VersionDisplay from './VersionDisplay';
 
 interface SwapInterfaceProps {
   // Token selection
@@ -76,9 +77,6 @@ export default function SwapInterface({
     []
   );
   const [swapping, setSwapping] = useState(false);
-  const [expandedRouteCards, setExpandedRouteCards] = useState<Set<number>>(
-    new Set()
-  );
 
   // Filter out fromToken from available tokens for toToken selection
   const availableToTokens = useMemo(
@@ -114,7 +112,52 @@ export default function SwapInterface({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromToken, toToken, availableToTokens]);
 
+  // Debounce timer ref for auto-fetching quotes
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-fetch quotes with debouncing when amount, fromToken, or toToken changes
+  useEffect(() => {
+    // Clear any existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Don't fetch if amount is invalid
+    if (!amount || parseFloat(amount) <= 0 || !fromToken || !toToken) {
+      // Clear quote if amount becomes invalid
+      if (!amount || parseFloat(amount) <= 0) {
+        setQuote(null);
+        setUnsignedTransactions([]);
+      }
+      return;
+    }
+
+    // Don't fetch if tokens are the same
+    if (fromToken === toToken) {
+      return;
+    }
+
+    // Set up debounced quote fetch (800ms delay)
+    debounceTimerRef.current = setTimeout(() => {
+      handleGetQuote();
+    }, 800);
+
+    // Cleanup function
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amount, fromToken, toToken, selectedPoolId]);
+
   const handleGetQuote = async () => {
+    // Clear any pending debounced quote fetch
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
     if (!amount || parseFloat(amount) <= 0) {
       setError('Please enter a valid amount');
       return;
@@ -262,8 +305,6 @@ export default function SwapInterface({
       setUnsignedTransactions(swapApiResponse.unsignedTransactions || []);
 
       setQuote(quoteData);
-      // Reset expanded route cards when new quote is fetched
-      setExpandedRouteCards(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -665,59 +706,105 @@ export default function SwapInterface({
 
                 {/* Route Breakdown Section */}
                 {showCompare && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-700 mb-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="font-medium text-gray-700 mb-3 text-sm">
                       Route Breakdown
                     </h4>
                     {/* Multi-pool route breakdown */}
                     {(quote as any).swapApiData?.route?.pools &&
                     (quote as any).swapApiData.route.pools.length > 0 ? (
-                      <div className="space-y-2">
-                        {(quote as any).swapApiData.route.pools.map(
-                          (pool: any, index: number) => {
-                            const poolInputDisplay = (
-                              parseFloat(pool.inputAmount) /
-                              Math.pow(10, fromTokenInfo?.decimals || 0)
-                            ).toFixed(6);
-                            const poolOutputDisplay = (
-                              parseFloat(pool.outputAmount) /
-                              Math.pow(10, toTokenInfo?.decimals || 0)
-                            ).toFixed(6);
-                            const isExpanded = expandedRouteCards.has(index);
-                            const toggleExpanded = () => {
-                              const newExpanded = new Set(expandedRouteCards);
-                              if (isExpanded) {
-                                newExpanded.delete(index);
-                              } else {
-                                newExpanded.add(index);
-                              }
-                              setExpandedRouteCards(newExpanded);
-                            };
+                      <>
+                        <div className="pb-2 md:overflow-x-auto md:flex md:justify-center">
+                          {(() => {
+                          // Check if all pools are doing the same swap (fromToken -> toToken)
+                          // This means both pools should have fromToken and toToken, and no intermediate token should be needed
+                          const getPoolTokenIds = (poolCfg: any): number[] => {
+                            const ids: number[] = [];
+                            if (poolCfg.tokens.tokA?.id !== undefined) ids.push(poolCfg.tokens.tokA.id);
+                            if (poolCfg.tokens.tokB?.id !== undefined) ids.push(poolCfg.tokens.tokB.id);
+                            if (poolCfg.tokens.wrappedPair) {
+                              ids.push(poolCfg.tokens.wrappedPair.tokA);
+                              ids.push(poolCfg.tokens.wrappedPair.tokB);
+                            }
+                            // Also check underlying tokens for wrapped pairs
+                            if (poolCfg.tokens.underlyingToWrapped) {
+                              Object.values(poolCfg.tokens.underlyingToWrapped).forEach((id: any) => ids.push(id));
+                              Object.keys(poolCfg.tokens.underlyingToWrapped).forEach((key: string) => {
+                                const keyId = parseInt(key);
+                                if (!isNaN(keyId)) ids.push(keyId);
+                              });
+                            }
+                            return ids;
+                          };
+
+                          // Get token IDs - handle both numeric IDs and string identifiers
+                          const fromTokenId = parseInt(fromToken) || 0;
+                          const toTokenId = parseInt(toToken) || 0;
+                          const fromTokenInfoId = fromTokenInfo ? parseInt(fromTokenInfo.tokenId) || 0 : 0;
+                          const toTokenInfoId = toTokenInfo ? parseInt(toTokenInfo.tokenId) || 0 : 0;
+                          
+                          // Check if all pools support fromToken -> toToken directly
+                          const allPoolsSameSwap = (quote as any).swapApiData.route.pools.every((pool: any) => {
+                            const poolConfig = availablePools.find(p => p.poolId === pool.poolId);
+                            if (!poolConfig) return false;
+                            const poolTokens = getPoolTokenIds(poolConfig);
+                            
+                            // Check if pool contains both fromToken and toToken (by ID)
+                            const hasFromToken = poolTokens.includes(fromTokenId) || 
+                                              poolTokens.includes(fromTokenInfoId) ||
+                                              (fromTokenId === 0 && poolTokens.some(id => id === 0 || id === 390001)); // VOI native/wrapped
+                            const hasToToken = poolTokens.includes(toTokenId) || 
+                                             poolTokens.includes(toTokenInfoId);
+                            
+                            return hasFromToken && hasToToken;
+                          });
+                          
+                          // Also check: if all pools have fromToken as input and toToken as output in their display,
+                          // they should be stacked (regardless of intermediate tokens in the route)
+                          // This handles cases where the route uses intermediates but pools effectively do fromToken -> toToken
+                          const allPoolsShowFromTo = (quote as any).swapApiData.route.pools.length > 1 &&
+                            (quote as any).swapApiData.route.pools.every((pool: any, index: number) => {
+                              // Calculate what tokens are being displayed for this pool
+                              const isFirst = index === 0;
+                              const isLast = index === (quote as any).swapApiData.route.pools.length - 1;
+                              
+                              // For stacked view, first pool should show fromToken input, last should show toToken output
+                              // All pools in between should also effectively be doing fromToken -> toToken
+                              return true; // If pool supports both tokens, it can do the swap
+                            });
+                          
+                          // Stack if all pools support the same swap (fromToken -> toToken)
+                          // This means they can all do the direct swap, so we stack them
+                          if (allPoolsSameSwap && allPoolsShowFromTo && (quote as any).swapApiData.route.pools.length > 1) {
+                            // Stacked view for same-direction pools
+                            const totalInput = (quote as any).swapApiData.route.pools.reduce((sum: number, pool: any) => 
+                              sum + parseFloat(pool.inputAmount), 0
+                            ) / Math.pow(10, fromTokenInfo?.decimals || 6);
+                            const totalOutput = (quote as any).swapApiData.route.pools.reduce((sum: number, pool: any) => 
+                              sum + parseFloat(pool.outputAmount), 0
+                            ) / Math.pow(10, toTokenInfo?.decimals || 6);
 
                             return (
-                              <div
-                                key={index}
-                                className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                              >
-                                <button
-                                  onClick={toggleExpanded}
-                                  className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                                >
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <span className="font-medium text-gray-700">
-                                      {pool.dex} Pool {pool.poolId}
-                                    </span>
-                                    <span className="text-gray-500">
-                                      {poolInputDisplay}{' '}
-                                      {fromTokenInfo?.symbol || fromToken} →{' '}
-                                      {poolOutputDisplay}{' '}
-                                      {toTokenInfo?.symbol || toToken}
-                                    </span>
+                              <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-2 md:min-w-max">
+                                {/* Starting Token */}
+                                <div className="flex flex-col items-center">
+                                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                                    <div className="text-[10px] font-medium opacity-90 mb-0.5">
+                                      You Pay
+                                    </div>
+                                    <div className="text-xs font-bold leading-tight">
+                                      {parseFloat(amount).toFixed(6)}
+                                    </div>
+                                    <div className="text-[10px] font-medium mt-0.5">
+                                      {fromTokenInfo?.symbol || fromToken}
+                                    </div>
                                   </div>
+                                </div>
+
+                                {/* Arrow to Split */}
+                                <div className="flex flex-col items-center">
                                   <svg
-                                    className={`h-4 w-4 text-gray-500 transition-transform ${
-                                      isExpanded ? 'rotate-180' : ''
-                                    }`}
+                                    className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -726,55 +813,408 @@ export default function SwapInterface({
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
                                       strokeWidth={2}
-                                      d="M19 9l-7 7-7-7"
+                                      d="M13 7l5 5m0 0l-5 5m5-5H6"
                                     />
                                   </svg>
-                                </button>
-                                {isExpanded && (
-                                  <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
-                                    <div className="space-y-1 text-xs">
-                                      <div className="flex justify-between">
-                                        <span className="text-gray-600">
-                                          Pool ID:
-                                        </span>
-                                        <span className="font-mono text-gray-900">
-                                          {pool.poolId}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-gray-600">
-                                          DEX:
-                                        </span>
-                                        <span className="text-gray-900">
-                                          {pool.dex}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-gray-600">
-                                          Input Amount:
-                                        </span>
-                                        <span className="font-mono text-gray-900">
-                                          {poolInputDisplay}{' '}
-                                          {fromTokenInfo?.symbol || fromToken}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-gray-600">
-                                          Output Amount:
-                                        </span>
-                                        <span className="font-mono text-gray-900">
-                                          {poolOutputDisplay}{' '}
-                                          {toTokenInfo?.symbol || toToken}
-                                        </span>
-                                      </div>
+                                </div>
+
+                                {/* Split Point and Stacked Pools */}
+                                <div className="relative flex flex-col items-center gap-3 md:flex-row md:items-center" style={{ minHeight: '120px' }}>
+                                  {/* Split/Merge Lines - positioned absolutely (hidden on small screens) */}
+                                  <div className="hidden md:absolute md:left-0 md:top-0 md:bottom-0 md:flex md:items-center md:justify-center" style={{ width: '100px' }}>
+                                    <svg width="100" height="100%" className="absolute inset-0">
+                                      {/* Calculate positions based on number of pools */}
+                                      {(() => {
+                                        const numPools = (quote as any).swapApiData.route.pools.length;
+                                        const poolHeight = 60; // Approximate height per pool
+                                        const totalHeight = Math.max(120, numPools * poolHeight);
+                                        const centerY = totalHeight / 2;
+                                        const poolPositions = (quote as any).swapApiData.route.pools.map((_: any, i: number) => {
+                                          const spacing = totalHeight / (numPools + 1);
+                                          return spacing * (i + 1);
+                                        });
+                                        
+                                        return (
+                                          <>
+                                            {/* Horizontal line from input arrow */}
+                                            <line
+                                              x1="0"
+                                              y1={centerY}
+                                              x2="20"
+                                              y2={centerY}
+                                              stroke="#9ca3af"
+                                              strokeWidth="2"
+                                            />
+                                            {/* Vertical split line */}
+                                            <line
+                                              x1="20"
+                                              y1={poolPositions[0]}
+                                              x2="20"
+                                              y2={poolPositions[poolPositions.length - 1]}
+                                              stroke="#9ca3af"
+                                              strokeWidth="2"
+                                            />
+                                            {/* Branches to each pool */}
+                                            {poolPositions.map((y: number, i: number) => (
+                                              <line
+                                                key={`branch-${i}`}
+                                                x1="20"
+                                                y1={y}
+                                                x2="60"
+                                                y2={y}
+                                                stroke="#9ca3af"
+                                                strokeWidth="2"
+                                              />
+                                            ))}
+                                            {/* Vertical merge line */}
+                                            <line
+                                              x1="60"
+                                              y1={poolPositions[0]}
+                                              x2="60"
+                                              y2={poolPositions[poolPositions.length - 1]}
+                                              stroke="#9ca3af"
+                                              strokeWidth="2"
+                                            />
+                                            {/* Horizontal line to output arrow */}
+                                            <line
+                                              x1="60"
+                                              y1={centerY}
+                                              x2="100"
+                                              y2={centerY}
+                                              stroke="#9ca3af"
+                                              strokeWidth="2"
+                                            />
+                                          </>
+                                        );
+                                      })()}
+                                    </svg>
+                                  </div>
+
+                                  {/* Pools Stacked */}
+                                  <div className="flex flex-col items-center gap-3 relative z-10 md:mx-0 md:static md:ml-[100px] md:mr-5">
+                                    {(quote as any).swapApiData.route.pools.map((pool: any, index: number) => {
+                                      const poolInputDisplay = (
+                                        parseFloat(pool.inputAmount) / Math.pow(10, fromTokenInfo?.decimals || 6)
+                                      ).toFixed(6);
+                                      const poolOutputDisplay = (
+                                        parseFloat(pool.outputAmount) / Math.pow(10, toTokenInfo?.decimals || 6)
+                                      ).toFixed(6);
+
+                                      return (
+                                        <div key={index} className="flex items-center">
+                                          <div className="bg-white border border-gray-300 rounded-md px-2 py-1.5 shadow-sm hover:shadow transition-shadow min-w-[110px] h-[70px] flex flex-col justify-center">
+                                            <div className="text-center">
+                                              <div className="text-[10px] font-semibold text-gray-600 mb-0.5">
+                                                {pool.dex.toUpperCase()}
+                                              </div>
+                                              <div className="text-[10px] font-mono text-gray-500">
+                                                Pool {pool.poolId}
+                                              </div>
+                                              <div className="mt-1 pt-1 border-t border-gray-200">
+                                                <div className="text-[10px] text-gray-600 leading-tight">
+                                                  In: {poolInputDisplay} {fromTokenInfo?.symbol || ''}
+                                                </div>
+                                                <div className="text-[10px] text-gray-600 leading-tight">
+                                                  Out: {poolOutputDisplay} {toTokenInfo?.symbol || ''}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Arrow from Merge */}
+                                <div className="flex flex-col items-center">
+                                  <svg
+                                    className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                    />
+                                  </svg>
+                                </div>
+
+                                {/* Ending Token */}
+                                <div className="flex flex-col items-center">
+                                  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                                    <div className="text-[10px] font-medium opacity-90 mb-0.5">
+                                      You Receive
+                                    </div>
+                                    <div className="text-xs font-bold leading-tight">
+                                      {parseFloat(quote.amountOut).toFixed(6)}
+                                    </div>
+                                    <div className="text-[10px] font-medium mt-0.5">
+                                      {toTokenInfo?.symbol || toToken}
                                     </div>
                                   </div>
-                                )}
+                                </div>
                               </div>
                             );
                           }
-                        )}
-                      </div>
+
+                          // Linear view for different-direction pools
+                          return (
+                            <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-1.5 md:min-w-max">
+                              {/* Starting Token */}
+                              <div className="flex flex-col items-center">
+                                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                                  <div className="text-[10px] font-medium opacity-90 mb-0.5">
+                                    You Pay
+                                  </div>
+                                  <div className="text-xs font-bold leading-tight">
+                                    {parseFloat(amount).toFixed(6)}
+                                  </div>
+                                  <div className="text-[10px] font-medium mt-0.5">
+                                    {fromTokenInfo?.symbol || fromToken}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Arrow from starting token */}
+                              <div className="flex flex-col items-center">
+                                <svg
+                                  className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                  />
+                                </svg>
+                              </div>
+
+                              {/* Pools with connecting arrows */}
+                              {(quote as any).swapApiData.route.pools.map(
+                            (pool: any, index: number) => {
+                              const isLastPool = index === (quote as any).swapApiData.route.pools.length - 1;
+                              const isFirstPool = index === 0;
+                              
+                              // Determine input and output tokens for this pool
+                              // Check if pool has explicit token fields from API
+                              const poolInputTokenId = pool.inputToken || (isFirstPool ? fromToken : null);
+                              const poolOutputTokenId = pool.outputToken || (isLastPool ? toToken : null);
+                              
+                              // Find token info objects
+                              const poolInputTokenInfo = isFirstPool 
+                                ? fromTokenInfo 
+                                : (poolInputTokenId 
+                                    ? tokens.find(t => t.tokenId === poolInputTokenId.toString() || t.address === poolInputTokenId?.toString()) 
+                                    : null);
+                              
+                              const poolOutputTokenInfo = isLastPool 
+                                ? toTokenInfo 
+                                : (poolOutputTokenId 
+                                    ? tokens.find(t => t.tokenId === poolOutputTokenId.toString() || t.address === poolOutputTokenId?.toString())
+                                    : null);
+
+                              // For multi-hop: determine intermediate token
+                              // The intermediate token is the output of this pool (which becomes input of next pool)
+                              let intermediateTokenInfo = null;
+                              if (!isLastPool) {
+                                // First try to use explicit output token from API
+                                if (poolOutputTokenInfo) {
+                                  intermediateTokenInfo = poolOutputTokenInfo;
+                                } else {
+                                  // For two-hop routes, find the token that connects pool1 and pool2
+                                  const nextPool = (quote as any).swapApiData.route.pools[index + 1];
+                                  if (nextPool) {
+                                    const currentPoolConfig = availablePools.find(p => p.poolId === pool.poolId);
+                                    const nextPoolConfig = availablePools.find(p => p.poolId === nextPool.poolId);
+                                    
+                                    if (currentPoolConfig && nextPoolConfig) {
+                                      // Get tokens from both pools
+                                      const getPoolTokenIds = (poolCfg: any): number[] => {
+                                        const ids: number[] = [];
+                                        if (poolCfg.tokens.tokA?.id !== undefined) ids.push(poolCfg.tokens.tokA.id);
+                                        if (poolCfg.tokens.tokB?.id !== undefined) ids.push(poolCfg.tokens.tokB.id);
+                                        if (poolCfg.tokens.wrappedPair) {
+                                          ids.push(poolCfg.tokens.wrappedPair.tokA);
+                                          ids.push(poolCfg.tokens.wrappedPair.tokB);
+                                        }
+                                        return ids;
+                                      };
+                                      
+                                      const currentTokens = getPoolTokenIds(currentPoolConfig);
+                                      const nextTokens = getPoolTokenIds(nextPoolConfig);
+                                      
+                                      // Find the token that's in both pools but not fromToken or toToken
+                                      const fromTokenId = parseInt(fromToken) || 0;
+                                      const toTokenId = parseInt(toToken) || 0;
+                                      
+                                      const connectingTokenId = currentTokens.find(id => 
+                                        nextTokens.includes(id) && 
+                                        id !== fromTokenId && 
+                                        id !== toTokenId
+                                      );
+                                      
+                                      if (connectingTokenId !== undefined) {
+                                        intermediateTokenInfo = tokens.find(t => 
+                                          t.tokenId === connectingTokenId.toString() || 
+                                          parseInt(t.tokenId) === connectingTokenId ||
+                                          parseInt(t.address) === connectingTokenId
+                                        ) || null;
+                                      }
+                                    }
+                                  }
+                                  
+                                  // Fallback: use common intermediate tokens
+                                  if (!intermediateTokenInfo) {
+                                    const possibleIntermediate = tokens.find(t => {
+                                      const commonIntermediates = appConfig?.routing.commonIntermediateTokens || [];
+                                      return commonIntermediates.includes(t.symbol) && 
+                                             t.tokenId !== fromToken && 
+                                             t.tokenId !== toToken &&
+                                             t.address !== fromToken &&
+                                             t.address !== toToken;
+                                    });
+                                    intermediateTokenInfo = possibleIntermediate || null;
+                                  }
+                                }
+                              }
+
+                              // Check if this is a split route (both pools doing fromToken -> toToken)
+                              // by checking if both pools support the same swap
+                              const isSplitRoute = (quote as any).swapApiData.route.pools.length > 1;
+                              let bothPoolsSameSwap = false;
+                              if (isSplitRoute) {
+                                // Check if both pools can do fromToken -> toToken
+                                const poolConfig = availablePools.find(p => p.poolId === pool.poolId);
+                                if (poolConfig) {
+                                  const getPoolTokenIds = (poolCfg: any): number[] => {
+                                    const ids: number[] = [];
+                                    if (poolCfg.tokens.tokA?.id !== undefined) ids.push(poolCfg.tokens.tokA.id);
+                                    if (poolCfg.tokens.tokB?.id !== undefined) ids.push(poolCfg.tokens.tokB.id);
+                                    if (poolCfg.tokens.wrappedPair) {
+                                      ids.push(poolCfg.tokens.wrappedPair.tokA);
+                                      ids.push(poolCfg.tokens.wrappedPair.tokB);
+                                    }
+                                    return ids;
+                                  };
+                                  const poolTokens = getPoolTokenIds(poolConfig);
+                                  const fromTokenId = parseInt(fromToken) || 0;
+                                  const toTokenId = parseInt(toToken) || 0;
+                                  // Check if this pool supports fromToken -> toToken
+                                  bothPoolsSameSwap = poolTokens.includes(fromTokenId) && poolTokens.includes(toTokenId);
+                                }
+                              }
+                              
+                              // For split routes where both pools do fromToken -> toToken, always show fromToken/toToken
+                              // Otherwise use the detected tokens
+                              const displayInputToken = (isSplitRoute && bothPoolsSameSwap) 
+                                ? fromTokenInfo 
+                                : (poolInputTokenInfo || fromTokenInfo);
+                              const displayOutputToken = (isSplitRoute && bothPoolsSameSwap) 
+                                ? toTokenInfo 
+                                : (poolOutputTokenInfo || toTokenInfo);
+                              
+                              // Calculate display amounts using correct decimals
+                              const inputDecimals = displayInputToken?.decimals || fromTokenInfo?.decimals || 6;
+                              const outputDecimals = displayOutputToken?.decimals || toTokenInfo?.decimals || 6;
+                              
+                              const poolInputDisplay = (
+                                parseFloat(pool.inputAmount) / Math.pow(10, inputDecimals)
+                              ).toFixed(6);
+
+                              const poolOutputDisplay = (
+                                parseFloat(pool.outputAmount) / Math.pow(10, outputDecimals)
+                              ).toFixed(6);
+
+                              return (
+                                <div key={index} className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-1.5">
+                                  {/* Arrow before pool (not for first pool) */}
+                                  {index > 0 && (
+                                    <div className="flex flex-col items-center">
+                                      <svg
+                                        className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                        />
+                                      </svg>
+                                    </div>
+                                  )}
+
+                                  {/* Pool Card */}
+                                  <div className="flex flex-col items-center">
+                                    <div className="bg-white border border-gray-300 rounded-md px-2 py-1.5 shadow-sm hover:shadow transition-shadow min-w-[110px] h-[70px] flex flex-col justify-center">
+                                      <div className="text-center">
+                                        <div className="text-[10px] font-semibold text-gray-600 mb-0.5">
+                                          {pool.dex.toUpperCase()}
+                                        </div>
+                                        <div className="text-[10px] font-mono text-gray-500">
+                                          Pool {pool.poolId}
+                                        </div>
+                                        <div className="mt-1 pt-1 border-t border-gray-200">
+                                          <div className="text-[10px] text-gray-600 leading-tight">
+                                            In: {poolInputDisplay} {displayInputToken?.symbol || fromTokenInfo?.symbol || ''}
+                                          </div>
+                                          <div className="text-[10px] text-gray-600 leading-tight">
+                                            Out: {poolOutputDisplay} {displayOutputToken?.symbol || toTokenInfo?.symbol || ''}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
+
+                          {/* Arrow after last pool */}
+                          <div className="flex flex-col items-center">
+                            <svg
+                              className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 7l5 5m0 0l-5 5m5-5H6"
+                              />
+                            </svg>
+                          </div>
+
+                          {/* Ending Token */}
+                          <div className="flex flex-col items-center">
+                            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                              <div className="text-[10px] font-medium opacity-90 mb-0.5">
+                                You Receive
+                              </div>
+                              <div className="text-xs font-bold leading-tight">
+                                {parseFloat(quote.amountOut).toFixed(6)}
+                              </div>
+                              <div className="text-[10px] font-medium mt-0.5">
+                                {toTokenInfo?.symbol || toToken}
+                              </div>
+                            </div>
+                          </div>
+                            </div>
+                          );
+                          })()}
+                        </div>
+                      </>
                     ) : quote.comparedRoutes ? (
                       <div className="space-y-2">
                         {quote.comparedRoutes.map((route, index) => (
@@ -898,6 +1338,9 @@ export default function SwapInterface({
                         </button>
                       </div>
                     </div>
+                    <p className="text-xs text-amber-600 mb-3 text-center font-medium">
+                      Use at your own risk. Always verify transaction details before confirming.
+                    </p>
                     <button
                       onClick={handleSwap}
                       disabled={
@@ -933,6 +1376,40 @@ export default function SwapInterface({
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-16 pt-8 pb-8 border-t-2 border-gray-300 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-2xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+          <div className="text-center sm:text-left">
+            <p className="text-gray-700 font-medium mb-1">
+              Ally - Simple & intuitive DEX aggregator for Voi
+            </p>
+            <p className="text-sm text-gray-500">
+              Powered by{' '}
+              <a
+                href="https://voi.humble.sh/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-gray-900 underline transition-colors"
+              >
+                HumbleSwap
+              </a>
+              {' & '}
+              <a
+                href="https://voi.nomadex.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-gray-900 underline transition-colors"
+              >
+                Nomadex
+              </a>
+            </p>
+          </div>
+          <div className="text-center">
+            <VersionDisplay />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
