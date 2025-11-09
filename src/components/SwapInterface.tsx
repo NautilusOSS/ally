@@ -1427,6 +1427,15 @@ export default function SwapInterface({
               >
                 Nomadex
               </a>
+              {' • '}
+              <a
+                href="https://voi.network/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-gray-900 underline transition-colors"
+              >
+                About Voi
+              </a>
             </p>
           </div>
           <div className="text-center">
