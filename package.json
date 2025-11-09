@@ -1,6 +1,6 @@
 {
   "name": "ally",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Ally - Simple & intuitive DEX aggregator for Voi",
   "private": true,
   "type": "module",
