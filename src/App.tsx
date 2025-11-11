@@ -18,6 +18,7 @@ import {
 } from '@txnlab/use-wallet-react';
 import WalletConnectModal from './components/WalletConnectModal';
 import SwapInterface from './components/SwapInterface';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   const [tokens, setTokens] = useState<TokenConfig[]>([]);
@@ -273,8 +274,9 @@ function App() {
   };
 
   return (
-    <WalletProvider manager={manager}>
-      <SwapInterface
+    <ThemeProvider>
+      <WalletProvider manager={manager}>
+        <SwapInterface
         tokens={tokens}
         fromToken={fromToken}
         toToken={toToken}
@@ -295,16 +297,17 @@ function App() {
         walletAddress={walletAddress}
         onConnectWallet={() => setShowWalletModal(true)}
         onDisconnectWallet={handleWalletDisconnect}
-      />
+        />
 
-      {/* Wallet Selection Modal */}
-      <WalletConnectModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-        onConnect={handleWalletConnect}
-        error={error}
-      />
-    </WalletProvider>
+        {/* Wallet Selection Modal */}
+        <WalletConnectModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+          onConnect={handleWalletConnect}
+          error={error}
+        />
+      </WalletProvider>
+    </ThemeProvider>
   );
 }
 

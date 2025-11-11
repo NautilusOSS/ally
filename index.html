@@ -10,6 +10,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ally — Your Trading Ally on Voi</title>
     <meta name="description" content="Simple & intuitive DEX aggregator for Voi" />
+    <script>
+      // Apply dark mode immediately to prevent flash
+      (function() {
+        const theme = localStorage.getItem('theme') || 'dark';
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body className="bg-gray-50 min-h-screen">
     <div id="root"></div>

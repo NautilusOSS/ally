@@ -6,22 +6,47 @@
   html {
     font-family: system-ui, sans-serif;
   }
+  
+  body {
+    @apply bg-sand-50 dark:bg-stone-900 oled:bg-black text-dune-900 dark:text-stone-100 oled:text-gray-300 transition-colors duration-200;
+  }
+  
+  /* OLED power saving optimizations */
+  .oled {
+    /* Reduce overall brightness with filter */
+    filter: brightness(0.85);
+    /* Disable smooth scrolling to save power */
+    scroll-behavior: auto;
+  }
+  
+  /* Reduce text brightness in OLED mode */
+  .oled * {
+    text-shadow: none !important;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 oled:bg-gray-800 oled:hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    /* Reduce button brightness in OLED */
+    @apply oled:brightness-90 oled:font-normal;
   }
   
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-sand-200 hover:bg-sand-300 dark:bg-stone-700 dark:hover:bg-stone-600 oled:bg-black oled:hover:bg-gray-900 oled:border-gray-900 text-dune-800 dark:text-stone-200 oled:text-gray-400 font-medium py-2 px-4 rounded-lg transition-colors duration-200 border border-sand-300 dark:border-stone-600;
+    /* Reduce font weight and remove transitions in OLED */
+    @apply oled:font-normal oled:transition-none;
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border border-sand-300 dark:border-stone-600 oled:border-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-sand-50 dark:bg-stone-800 oled:bg-black text-dune-900 dark:text-stone-100 oled:text-gray-300 transition-colors duration-200;
+    /* Thinner border and reduced focus ring in OLED */
+    @apply oled:border oled:focus:ring-1 oled:focus:ring-gray-700 oled:transition-none;
   }
   
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    @apply bg-sand-50 dark:bg-stone-800 oled:bg-black rounded-xl shadow-sm border border-sand-200 dark:border-stone-700 oled:border-gray-900 p-6 transition-colors duration-200;
+    /* Remove shadow and use thinner border in OLED */
+    @apply oled:shadow-none oled:border oled:transition-none;
   }
 }

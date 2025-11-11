@@ -8,6 +8,7 @@ import type {
 import { useWallet, WalletId } from '@txnlab/use-wallet-react';
 import algosdk from 'algosdk';
 import VersionDisplay from './VersionDisplay';
+import ThemeToggle from './ThemeToggle';
 
 interface SwapInterfaceProps {
   // Token selection
@@ -421,11 +422,16 @@ export default function SwapInterface({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-sand-100 via-sand-50 to-dune-100 dark:from-stone-900 dark:via-stone-800 dark:to-stone-700 oled:from-black oled:via-black oled:to-black oled:transition-none transition-colors duration-200">
       <div className="container mx-auto px-4 py-8">
+        {/* Theme Toggle - Top Right */}
+        <div className="flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
+        
         {/* Header */}
         <div className="text-center mb-10 sm:mb-12">
-          <h1 className="text-5xl sm:text-6xl font-bold text-black mb-4 tracking-tight">Ally</h1>
+          <h1 className="text-5xl sm:text-6xl font-bold text-dune-800 dark:text-stone-200 oled:text-gray-400 oled:font-semibold mb-4 tracking-tight oled:transition-none transition-colors duration-200">Ally</h1>
           {/* Genie Lamp Icon */}
           <div className="flex justify-center mb-4">
             <svg
@@ -434,7 +440,7 @@ export default function SwapInterface({
               viewBox="230 280 560 480"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="text-black transition-transform duration-300 hover:scale-105"
+              className="text-dune-800 dark:text-stone-200 oled:text-gray-400 oled:hover:scale-100 transition-all duration-300 hover:scale-105"
             >
               <path
                 fill="currentColor"
@@ -450,21 +456,21 @@ export default function SwapInterface({
               />
             </svg>
           </div>
-          <p className="text-base sm:text-lg text-gray-600 font-medium">Your trading ally on Voi</p>
+          <p className="text-base sm:text-lg text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal font-medium transition-colors duration-200 oled:transition-none">Your trading ally on Voi</p>
         </div>
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
           {/* Input Card */}
           <div className="card mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-dune-800 dark:text-stone-100 oled:text-gray-400 oled:font-semibold mb-4 transition-colors duration-200 oled:transition-none">
               Get Quote
             </h2>
 
             <div className="space-y-4">
               {/* From Token */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal mb-2 transition-colors duration-200 oled:transition-none">
                   You pay
                 </label>
                 <div className="relative flex items-center">
@@ -483,7 +489,7 @@ export default function SwapInterface({
                       onChange={(e) => {
                         onFromTokenChange(e.target.value);
                       }}
-                      className="bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer appearance-none text-right font-medium text-gray-700 pr-5"
+                      className="bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer appearance-none text-right font-medium text-dune-700 pr-5"
                       disabled={!tokens.length}
                     >
                       {tokens.map((token) => (
@@ -493,7 +499,7 @@ export default function SwapInterface({
                       ))}
                     </select>
                     <svg
-                      className="pointer-events-none h-4 w-4 text-gray-500 flex-shrink-0"
+                      className="pointer-events-none h-4 w-4 text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal flex-shrink-0 transition-colors duration-200 oled:transition-none"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -513,7 +519,7 @@ export default function SwapInterface({
               <div className="flex justify-center -my-2">
                 <button
                   onClick={handleSwapTokens}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-full transition-colors duration-200 border-2 border-gray-300 hover:border-gray-400"
+                  className="bg-sand-200 hover:bg-sand-300 dark:bg-stone-700 oled:bg-black oled:shadow-none dark:hover:bg-stone-600 oled:hover:bg-black text-dune-600 dark:text-stone-300 p-2 rounded-full transition-colors duration-200 oled:transition-none border-2 border-sand-300 dark:border-stone-600 oled:border-gray-900 hover:border-sand-400 dark:hover:border-stone-500"
                   disabled={!tokens.length}
                   title="Swap tokens"
                 >
@@ -536,7 +542,7 @@ export default function SwapInterface({
 
               {/* To Token */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-dune-700 mb-2">
                   You receive
                 </label>
                 <div className="relative flex items-center">
@@ -545,7 +551,7 @@ export default function SwapInterface({
                     placeholder="0.00"
                     value={quote ? parseFloat(quote.amountOut).toFixed(6) : ''}
                     readOnly
-                    className="input-field pr-32 bg-gray-50"
+                    className="input-field pr-32 bg-sand-100 dark:bg-stone-700 oled:bg-black oled:shadow-none"
                   />
                   <div className="absolute right-2 flex items-center gap-1">
                     <select
@@ -553,7 +559,7 @@ export default function SwapInterface({
                       onChange={(e) => {
                         onToTokenChange(e.target.value);
                       }}
-                      className="bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer appearance-none text-right font-medium text-gray-700 pr-5"
+                      className="bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer appearance-none text-right font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal pr-5 transition-colors duration-200 oled:transition-none"
                       disabled={!tokens.length}
                     >
                       {availableToTokens.map((token) => (
@@ -563,7 +569,7 @@ export default function SwapInterface({
                       ))}
                     </select>
                     <svg
-                      className="pointer-events-none h-4 w-4 text-gray-500 flex-shrink-0"
+                      className="pointer-events-none h-4 w-4 text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal flex-shrink-0 transition-colors duration-200 oled:transition-none"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -582,7 +588,7 @@ export default function SwapInterface({
               {/* Available Pools */}
               {availablePools.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal mb-2 transition-colors duration-200 oled:transition-none">
                     Pool (Optional)
                   </label>
                   <select
@@ -603,7 +609,7 @@ export default function SwapInterface({
                     ))}
                   </select>
                   {availablePools.length > 1 && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal mt-1 transition-colors duration-200 oled:transition-none">
                       {availablePools.length} pools available. Select one or let
                       us find the best route.
                     </p>
@@ -624,15 +630,15 @@ export default function SwapInterface({
 
           {/* Error Display */}
           {error && (
-            <div className="card mb-6 bg-red-50 border-red-200">
-              <p className="text-red-700">{error}</p>
+            <div className="card mb-6 bg-red-50 dark:bg-red-900/20 oled:bg-red-900/10 border-red-200 dark:border-red-800 oled:border-red-900">
+              <p className="text-red-700 dark:text-red-400 oled:text-red-500 transition-colors duration-200 oled:transition-none">{error}</p>
             </div>
           )}
 
           {/* Quote Display */}
           {quote && (
             <div className="card mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-dune-800 dark:text-stone-100 oled:text-gray-400 oled:font-semibold mb-4 transition-colors duration-200 oled:transition-none">
                 Best Route
               </h3>
 
@@ -643,26 +649,26 @@ export default function SwapInterface({
                     {parseFloat(quote.amountOut).toFixed(6)}{' '}
                     {toTokenInfo?.symbol || toToken}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal mt-1 transition-colors duration-200 oled:transition-none">
                     ≈ ${(parseFloat(quote.amountOut) * 0.5).toFixed(2)} USD
                   </div>
                 </div>
 
                 {/* Route Info */}
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-sand-100 dark:bg-stone-700 oled:bg-black oled:shadow-none/50 rounded-lg p-4 transition-colors duration-200 oled:transition-none">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-700">Route:</span>
-                    <span className="text-sm font-mono bg-white px-2 py-1 rounded">
+                    <span className="font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal transition-colors duration-200 oled:transition-none">Route:</span>
+                    <span className="text-sm font-mono bg-sand-50 dark:bg-stone-800 oled:bg-black oled:shadow-none px-2 py-1 rounded transition-colors duration-200 oled:transition-none">
                       {formatRoute(quote.path)}
                     </span>
                   </div>
 
                   {(quote as any).swapApiData?.poolId != null && (
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-700">
+                      <span className="font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal transition-colors duration-200 oled:transition-none">
                         Pool ID:
                       </span>
-                      <span className="text-sm font-mono text-gray-600">
+                      <span className="text-sm font-mono text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                         {(quote as any).swapApiData.poolId}
                       </span>
                     </div>
@@ -670,10 +676,10 @@ export default function SwapInterface({
 
                   {(quote as any).swapApiData?.rate != null && (
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-700">
+                      <span className="font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal transition-colors duration-200 oled:transition-none">
                         Exchange Rate:
                       </span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                         1 {fromTokenInfo?.symbol || fromToken} ={' '}
                         {(quote as any).swapApiData.rate.toFixed(6)}{' '}
                         {toTokenInfo?.symbol || toToken}
@@ -682,7 +688,7 @@ export default function SwapInterface({
                   )}
 
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-700">
+                    <span className="font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal transition-colors duration-200 oled:transition-none">
                       Price Impact:
                     </span>
                     <span
@@ -699,8 +705,8 @@ export default function SwapInterface({
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-700">Fees:</span>
-                    <span className="text-sm text-gray-600">
+                    <span className="font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal transition-colors duration-200 oled:transition-none">Fees:</span>
+                    <span className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                       {quote.feesEstimated.lpFeePct.toFixed(2)}% LP fee
                     </span>
                   </div>
@@ -708,8 +714,8 @@ export default function SwapInterface({
 
                 {/* Warnings */}
                 {quote.warnings && quote.warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <div className="text-yellow-800 text-sm">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 oled:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 oled:border-yellow-900 rounded-lg p-3 transition-colors duration-200 oled:transition-none">
+                    <div className="text-yellow-800 dark:text-yellow-400 oled:text-yellow-500 text-sm transition-colors duration-200 oled:transition-none">
                       <strong>Warnings:</strong>
                       <ul className="mt-1 list-disc list-inside">
                         {quote.warnings.map((warning, index) => (
@@ -730,8 +736,8 @@ export default function SwapInterface({
 
                 {/* Route Breakdown Section */}
                 {showCompare && (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <h4 className="font-medium text-gray-700 mb-3 text-sm">
+                  <div className="bg-sand-100 dark:bg-stone-700 oled:bg-black oled:shadow-none/50 rounded-lg p-3 transition-colors duration-200 oled:transition-none">
+                    <h4 className="font-medium text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal mb-3 text-sm transition-colors duration-200 oled:transition-none">
                       Route Breakdown
                     </h4>
                     {/* Multi-pool route breakdown */}
@@ -812,7 +818,7 @@ export default function SwapInterface({
                               <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-2 md:min-w-max">
                                 {/* Starting Token */}
                                 <div className="flex flex-col items-center">
-                                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                                  <div className="bg-gradient-to-br from-primary-500 to-primary-600 oled:from-gray-800 oled:to-gray-800 text-white rounded-lg px-2 py-1.5 shadow-md oled:shadow-none min-w-[110px] h-[70px] flex flex-col justify-center text-center">
                                     <div className="text-[10px] font-medium opacity-90 mb-0.5">
                                       You Pay
                                     </div>
@@ -828,7 +834,7 @@ export default function SwapInterface({
                                 {/* Arrow to Split */}
                                 <div className="flex flex-col items-center">
                                   <svg
-                                    className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                                    className="w-5 h-5 text-dune-500 dark:text-stone-400 rotate-90 md:rotate-0 transition-colors duration-200 oled:transition-none"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -926,19 +932,19 @@ export default function SwapInterface({
 
                                       return (
                                         <div key={index} className="flex items-center">
-                                          <div className="bg-white border border-gray-300 rounded-md px-2 py-1.5 shadow-sm hover:shadow transition-shadow min-w-[110px] h-[70px] flex flex-col justify-center">
+                                          <div className="bg-sand-50 dark:bg-stone-800 oled:bg-black oled:shadow-none border border-sand-300 dark:border-stone-600 oled:border-gray-900 rounded-md px-2 py-1.5 shadow-sm hover:shadow oled:hover:shadow-none transition-all min-w-[110px] h-[70px] flex flex-col justify-center">
                                             <div className="text-center">
-                                              <div className="text-[10px] font-semibold text-gray-600 mb-0.5">
+                                              <div className="text-[10px] font-semibold text-dune-600 dark:text-stone-300 mb-0.5 transition-colors duration-200 oled:transition-none">
                                                 {pool.dex.toUpperCase()}
                                               </div>
-                                              <div className="text-[10px] font-mono text-gray-500">
+                                              <div className="text-[10px] font-mono text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                                                 Pool {pool.poolId}
                                               </div>
-                                              <div className="mt-1 pt-1 border-t border-gray-200">
-                                                <div className="text-[10px] text-gray-600 leading-tight">
+                                              <div className="mt-1 pt-1 border-t border-sand-200 dark:border-stone-700 oled:border-gray-900 transition-colors duration-200 oled:transition-none">
+                                                <div className="text-[10px] text-dune-600 dark:text-stone-300 leading-tight transition-colors duration-200 oled:transition-none">
                                                   In: {poolInputDisplay} {fromTokenInfo?.symbol || ''}
                                                 </div>
-                                                <div className="text-[10px] text-gray-600 leading-tight">
+                                                <div className="text-[10px] text-dune-600 dark:text-stone-300 leading-tight transition-colors duration-200 oled:transition-none">
                                                   Out: {poolOutputDisplay} {toTokenInfo?.symbol || ''}
                                                 </div>
                                               </div>
@@ -953,7 +959,7 @@ export default function SwapInterface({
                                 {/* Arrow from Merge */}
                                 <div className="flex flex-col items-center">
                                   <svg
-                                    className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                                    className="w-5 h-5 text-dune-500 dark:text-stone-400 rotate-90 md:rotate-0 transition-colors duration-200 oled:transition-none"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -969,7 +975,7 @@ export default function SwapInterface({
 
                                 {/* Ending Token */}
                                 <div className="flex flex-col items-center">
-                                  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                                  <div className="bg-gradient-to-br from-primary-500 to-primary-600 oled:from-gray-800 oled:to-gray-800 text-white rounded-lg px-2 py-1.5 shadow-md oled:shadow-none min-w-[110px] h-[70px] flex flex-col justify-center text-center">
                                     <div className="text-[10px] font-medium opacity-90 mb-0.5">
                                       You Receive
                                     </div>
@@ -990,7 +996,7 @@ export default function SwapInterface({
                             <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-1.5 md:min-w-max">
                               {/* Starting Token */}
                               <div className="flex flex-col items-center">
-                                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                                <div className="bg-gradient-to-br from-primary-500 to-primary-600 oled:from-gray-800 oled:to-gray-800 text-white rounded-lg px-2 py-1.5 shadow-md oled:shadow-none min-w-[110px] h-[70px] flex flex-col justify-center text-center">
                                   <div className="text-[10px] font-medium opacity-90 mb-0.5">
                                     You Pay
                                   </div>
@@ -1162,7 +1168,7 @@ export default function SwapInterface({
                                   {index > 0 && (
                                     <div className="flex flex-col items-center">
                                       <svg
-                                        className="w-5 h-5 text-gray-400 rotate-90 md:rotate-0"
+                                        className="w-5 h-5 text-dune-500 dark:text-stone-400 rotate-90 md:rotate-0 transition-colors duration-200 oled:transition-none"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -1179,19 +1185,19 @@ export default function SwapInterface({
 
                                   {/* Pool Card */}
                                   <div className="flex flex-col items-center">
-                                    <div className="bg-white border border-gray-300 rounded-md px-2 py-1.5 shadow-sm hover:shadow transition-shadow min-w-[110px] h-[70px] flex flex-col justify-center">
+                                    <div className="bg-sand-50 dark:bg-stone-800 oled:bg-black oled:shadow-none border border-sand-300 dark:border-stone-600 oled:border-gray-900 rounded-md px-2 py-1.5 shadow-sm hover:shadow oled:hover:shadow-none transition-all min-w-[110px] h-[70px] flex flex-col justify-center">
                                       <div className="text-center">
-                                        <div className="text-[10px] font-semibold text-gray-600 mb-0.5">
+                                        <div className="text-[10px] font-semibold text-dune-600 dark:text-stone-300 mb-0.5 transition-colors duration-200 oled:transition-none">
                                           {pool.dex.toUpperCase()}
                                         </div>
-                                        <div className="text-[10px] font-mono text-gray-500">
+                                        <div className="text-[10px] font-mono text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                                           Pool {pool.poolId}
                                         </div>
-                                        <div className="mt-1 pt-1 border-t border-gray-200">
-                                          <div className="text-[10px] text-gray-600 leading-tight">
+                                        <div className="mt-1 pt-1 border-t border-sand-200 dark:border-stone-700 oled:border-gray-900 transition-colors duration-200 oled:transition-none">
+                                          <div className="text-[10px] text-dune-600 dark:text-stone-300 leading-tight transition-colors duration-200 oled:transition-none">
                                             In: {poolInputDisplay} {displayInputToken?.symbol || fromTokenInfo?.symbol || ''}
                                           </div>
-                                          <div className="text-[10px] text-gray-600 leading-tight">
+                                          <div className="text-[10px] text-dune-600 dark:text-stone-300 leading-tight transition-colors duration-200 oled:transition-none">
                                             Out: {poolOutputDisplay} {displayOutputToken?.symbol || toTokenInfo?.symbol || ''}
                                           </div>
                                         </div>
@@ -1222,7 +1228,7 @@ export default function SwapInterface({
 
                           {/* Ending Token */}
                           <div className="flex flex-col items-center">
-                            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg px-2 py-1.5 shadow-md min-w-[110px] h-[70px] flex flex-col justify-center text-center">
+                            <div className="bg-gradient-to-br from-primary-500 to-primary-600 oled:from-gray-800 oled:to-gray-800 text-white rounded-lg px-2 py-1.5 shadow-md oled:shadow-none min-w-[110px] h-[70px] flex flex-col justify-center text-center">
                               <div className="text-[10px] font-medium opacity-90 mb-0.5">
                                 You Receive
                               </div>
@@ -1244,12 +1250,12 @@ export default function SwapInterface({
                         {quote.comparedRoutes.map((route, index) => (
                           <div
                             key={index}
-                            className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
+                            className="flex justify-between items-center py-2 border-b border-sand-200 dark:border-stone-700 oled:border-gray-900 last:border-b-0 transition-colors duration-200 oled:transition-none"
                           >
-                            <span className="text-sm font-medium text-gray-600">
+                            <span className="text-sm font-medium text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                               {route.label}
                             </span>
-                            <span className="text-sm font-mono text-gray-900">
+                            <span className="text-sm font-mono text-dune-800 dark:text-stone-100 oled:text-gray-400 oled:font-semibold transition-colors duration-200 oled:transition-none">
                               {parseFloat(route.amountOut).toFixed(6)}{' '}
                               {toTokenInfo?.symbol || toToken}
                             </span>
@@ -1257,7 +1263,7 @@ export default function SwapInterface({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                         No route breakdown available
                       </p>
                     )}
@@ -1273,7 +1279,7 @@ export default function SwapInterface({
               <div className="space-y-4">
                 {!isWalletConnected ? (
                   <div>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal mb-3 transition-colors duration-200 oled:transition-none">
                       Connect your wallet to execute the swap
                     </p>
                     <button
@@ -1282,7 +1288,7 @@ export default function SwapInterface({
                     >
                       Connect Wallet
                     </button>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
+                    <p className="text-xs text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal mt-2 text-center transition-colors duration-200 oled:transition-none">
                       Supported: Voi Wallet, Lute Wallet, and other Algorand
                       wallets
                     </p>
@@ -1290,16 +1296,16 @@ export default function SwapInterface({
                 ) : unsignedTransactions.length === 0 ? (
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm text-gray-600">Connected:</span>
+                      <span className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">Connected:</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono text-gray-900">
+                        <span className="text-sm font-mono text-dune-800 dark:text-stone-100 oled:text-gray-400 oled:font-semibold transition-colors duration-200 oled:transition-none">
                           {displayAddress
                             ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}`
                             : 'Connected'}
                         </span>
                         <button
                           onClick={handleDisconnect}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-gray-100"
+                          className="text-dune-500 dark:text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-sand-200 dark:hover:bg-stone-700 oled:hover:bg-black"
                           title="Disconnect wallet"
                         >
                           <svg
@@ -1319,7 +1325,7 @@ export default function SwapInterface({
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal mb-3 transition-colors duration-200 oled:transition-none">
                       Get a new quote to receive unsigned transactions for
                       signing.
                     </p>
@@ -1333,16 +1339,16 @@ export default function SwapInterface({
                 ) : (
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm text-gray-600">Connected:</span>
+                      <span className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">Connected:</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono text-gray-900">
+                        <span className="text-sm font-mono text-dune-800 dark:text-stone-100 oled:text-gray-400 oled:font-semibold transition-colors duration-200 oled:transition-none">
                           {displayAddress
                             ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}`
                             : 'Connected'}
                         </span>
                         <button
                           onClick={handleDisconnect}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-gray-100"
+                          className="text-dune-500 dark:text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-sand-200 dark:hover:bg-stone-700 oled:hover:bg-black"
                           title="Disconnect wallet"
                         >
                           <svg
@@ -1362,7 +1368,7 @@ export default function SwapInterface({
                         </button>
                       </div>
                     </div>
-                    <p className="text-xs text-amber-600 mb-3 text-center font-medium">
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mb-3 text-center font-medium transition-colors duration-200 oled:transition-none">
                       Use at your own risk. Always verify transaction details before confirming.
                     </p>
                     <button
@@ -1378,7 +1384,7 @@ export default function SwapInterface({
                         ? 'Signing & Submitting...'
                         : `Swap ${fromTokenInfo?.symbol || ''} → ${toTokenInfo?.symbol || ''}`}
                     </button>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
+                    <p className="text-xs text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal mt-2 text-center transition-colors duration-200 oled:transition-none">
                       You will be prompted to sign {unsignedTransactions.length}{' '}
                       transaction
                       {unsignedTransactions.length !== 1 ? 's' : ''} in your
@@ -1393,7 +1399,7 @@ export default function SwapInterface({
           {/* Empty State */}
           {!quote && !loading && !error && (
             <div className="card text-center">
-              <p className="text-gray-500">
+              <p className="text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
                 Pick tokens, enter an amount, and let Ally find the best route.
               </p>
             </div>
@@ -1402,19 +1408,19 @@ export default function SwapInterface({
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 pt-8 pb-8 border-t-2 border-gray-300 bg-white/50 backdrop-blur-sm">
+      <footer className="mt-16 pt-8 pb-8 border-t-2 border-sand-300 dark:border-stone-700 oled:border-gray-900 bg-sand-50/50 dark:bg-stone-800 oled:bg-black oled:shadow-none/50 backdrop-blur-sm transition-colors duration-200 oled:transition-none">
         <div className="max-w-2xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="text-center sm:text-left">
-            <p className="text-gray-700 font-medium mb-1">
+            <p className="text-dune-700 dark:text-stone-300 oled:text-gray-500 oled:font-normal font-medium mb-1 transition-colors duration-200 oled:transition-none">
               Ally - Simple & intuitive DEX aggregator for Voi
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 oled:transition-none">
               Powered by{' '}
               <a
                 href="https://voi.humble.sh/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-gray-900 underline transition-colors"
+                className="text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal hover:text-dune-800 dark:hover:text-stone-200 underline transition-colors"
               >
                 HumbleSwap
               </a>
@@ -1423,7 +1429,7 @@ export default function SwapInterface({
                 href="https://voi.nomadex.app/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-gray-900 underline transition-colors"
+                className="text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal hover:text-dune-800 dark:hover:text-stone-200 underline transition-colors"
               >
                 Nomadex
               </a>
@@ -1432,7 +1438,7 @@ export default function SwapInterface({
                 href="https://voi.network/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-gray-900 underline transition-colors"
+                className="text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal hover:text-dune-800 dark:hover:text-stone-200 underline transition-colors"
               >
                 About Voi
               </a>

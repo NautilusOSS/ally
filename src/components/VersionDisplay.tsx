@@ -14,7 +14,7 @@ const VersionDisplay: React.FC<VersionDisplayProps> = ({ className = '' }) => {
   }
   
   return (
-    <div className={`text-xs text-gray-500 ${className}`}>
+    <div className={`text-xs text-dune-600 dark:text-stone-400 oled:text-gray-600 oled:font-normal transition-colors duration-200 ${className}`}>
       Ally v{version}
     </div>
   );
