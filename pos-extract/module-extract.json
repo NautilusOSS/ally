@@ -1,0 +1,145 @@
+{
+  "source_app": "Ally",
+  "source_description": "Voi DEX aggregator integrating HumbleSwap, Nomadex, and Swap-API (swap200/ARC200)",
+  "target": "Algorand POS v0",
+  "modules": [
+    {
+      "name": "router",
+      "version": "0.1.0",
+      "actions": [
+        {
+          "function_name": "getQuote",
+          "where_called": "src/components/SwapInterface.tsx :: handleGetQuote",
+          "inputs_required": ["inputToken (tokenId)", "outputToken (tokenId)", "amount (base units)", "slippageTolerance", "address (optional, for unsigned txns)", "poolId (optional)"],
+          "transaction_pattern": "none (quote only); execution uses atomic group from Swap-API",
+          "constraints": "slippage from appConfig.ui.defaultSlippageTolerance (0.01); deadline TBD (handled by Swap-API)"
+        },
+        {
+          "function_name": "executeSwap",
+          "where_called": "src/components/SwapInterface.tsx :: handleSwap",
+          "inputs_required": ["unsignedTransactions (base64[] from quote)", "activeAccount", "algodClient", "signTransactions"],
+          "transaction_pattern": "atomic group (all txns from Swap-API signed and submitted together)",
+          "constraints": "Wallet must be connected; all txns signed; MBR/fee funding TBD (handled by Swap-API)"
+        }
+      ],
+      "queries": [
+        {
+          "name": "quote",
+          "where_data_from": "External Swap-API POST /quote",
+          "algod_vs_indexer": "neither; HTTP to swap-api-iota.vercel.app",
+          "refresh_behavior": "Debounced 800ms on amount/fromToken/toToken/selectedPoolId change; manual Get Quote button"
+        }
+      ],
+      "events": [],
+      "uiBlocks": ["SwapInterface (token selectors, amount input, pool selector, quote display, route breakdown, swap button)"],
+      "dependencies": ["token module (token list, decimals)", "wallet runtime (signTransactions, activeAccount)", "pool module (available pools for pair)"],
+      "config": {
+        "app_ids": [],
+        "token_ids": ["0", "302190", "390001", "395614", "420069"],
+        "network": "voi-mainnet",
+        "swap_api_base_url": "https://swap-api-iota.vercel.app",
+        "swap_api_quote_endpoint": "/quote"
+      }
+    },
+    {
+      "name": "arc200-token",
+      "version": "0.1.0",
+      "actions": [],
+      "queries": [
+        {
+          "name": "loadTokensConfig",
+          "where_data_from": "GET /config/tokens.json",
+          "algod_vs_indexer": "static config",
+          "refresh_behavior": "On app mount (App.tsx loadConfigs)"
+        }
+      ],
+      "events": [],
+      "uiBlocks": ["Token selector (from/to dropdowns in SwapInterface)"],
+      "dependencies": [],
+      "config": {
+        "app_ids": [],
+        "token_ids": ["0", "302190", "390001", "395614", "420069"],
+        "network": "voi-mainnet"
+      }
+    },
+    {
+      "name": "pool",
+      "version": "0.1.0",
+      "actions": [],
+      "queries": [
+        {
+          "name": "loadPoolsConfig",
+          "where_data_from": "GET /config/pools.json",
+          "algod_vs_indexer": "static config",
+          "refresh_behavior": "On app mount"
+        },
+        {
+          "name": "availablePoolsForPair",
+          "where_data_from": "Derived in App.tsx from pools + fromTokenInfo + toTokenInfo",
+          "algod_vs_indexer": "in-memory filter",
+          "refresh_behavior": "When fromTokenInfo or toTokenInfo or pools change"
+        }
+      ],
+      "events": [],
+      "uiBlocks": ["Pool dropdown (optional pool selection in SwapInterface)"],
+      "dependencies": ["arc200-token (tokenId resolution)"],
+      "config": {
+        "app_ids": [395553, 429999, 411756, 429995],
+        "token_ids": ["0", "302190", "390001", "395614", "420069"],
+        "network": "voi-mainnet",
+        "pool_ids": [395553, 429999, 411756, 429995]
+      }
+    },
+    {
+      "name": "wallet",
+      "version": "0.1.0",
+      "actions": [
+        {
+          "function_name": "connect",
+          "where_called": "src/components/WalletConnectModal.tsx :: handleWalletClick (wallet.connect) or App.tsx handleWalletConnect (window.algorand fallback)",
+          "inputs_required": ["wallet id (Lute, WalletConnect, etc.)"],
+          "transaction_pattern": "none",
+          "constraints": "none"
+        },
+        {
+          "function_name": "disconnect",
+          "where_called": "src/components/SwapInterface.tsx :: handleDisconnect (activeWallet.disconnect)",
+          "inputs_required": [],
+          "transaction_pattern": "none",
+          "constraints": "none"
+        },
+        {
+          "function_name": "signTransactions",
+          "where_called": "src/components/SwapInterface.tsx :: handleSwap (useWallet().signTransactions)",
+          "inputs_required": ["txnsToSign: Uint8Array[]"],
+          "transaction_pattern": "atomic group",
+          "constraints": "User must approve in wallet; WalletConnect session must be valid"
+        }
+      ],
+      "queries": [
+        {
+          "name": "activeAccount",
+          "where_data_from": "useWallet() from @txnlab/use-wallet-react",
+          "algod_vs_indexer": "wallet provider state",
+          "refresh_behavior": "Reactive to wallet connection/switch"
+        },
+        {
+          "name": "wallets list",
+          "where_data_from": "useWallet().wallets",
+          "algod_vs_indexer": "wallet provider",
+          "refresh_behavior": "Provider-driven"
+        }
+      ],
+      "events": [],
+      "uiBlocks": ["WalletConnectModal", "Connect Wallet button", "Connected address + disconnect in SwapInterface"],
+      "dependencies": [],
+      "config": {
+        "app_ids": [],
+        "token_ids": [],
+        "network": "voi-mainnet",
+        "supported_wallets": ["Lute", "WalletConnect"],
+        "wallet_connect_project_id": "cd7fe0125d88d239da79fa286e6de2a8"
+      }
+    }
+  ]
+}

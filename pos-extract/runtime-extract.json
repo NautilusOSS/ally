@@ -1,0 +1,21 @@
+{
+  "wallet": {
+    "supported_wallets": ["Lute", "WalletConnect"],
+    "pera_defly_mentioned": "Fallback in App.tsx handleWalletConnect checks window.algorand for Pera/Defly; primary flow uses WalletManager with Lute + WalletConnect",
+    "connection_flow": "User opens WalletConnectModal -> clicks wallet -> wallet.connect() or parent onConnect(walletType); on success modal closes and activeAccount set by WalletProvider",
+    "signing_apis": "signTransactions(txns: Uint8Array[]) from useWallet(); returns signed txns for submit",
+    "account_switching_behavior": "TBD (use-wallet-react provides activeAccount; explicit switch UI not present in codebase)"
+  },
+  "transactions": {
+    "atomic_group_builder_location": "External: Swap-API returns unsignedTransactions (base64). Frontend does not build groups; decodes base64 to Uint8Array[] and passes to signTransactions",
+    "fee_funding_mbr_handling": "TBD (assumed handled by Swap-API / backend; no explicit MBR or fee logic in frontend)",
+    "slippage_enforcement": "Slippage sent in quote request (appConfig.ui.defaultSlippageTolerance, default 0.01); enforcement is on Swap-API/contract side",
+    "confirmation_tracking": "algosdk.waitForConfirmation(algodClient, res.txid, 4) in SwapInterface.tsx after sendRawTransaction",
+    "retry_error_logic": "try/catch in handleSwap; WalletConnect session expiry detected by message (session/no session found) and user prompted to reconnect; no automatic retry"
+  },
+  "indexing": {
+    "indexer_endpoints": "None in frontend. No Algorand indexer used; pool/token data from static config and quote from Swap-API",
+    "history_views": "None",
+    "analytics_queries": "None"
+  }
+}

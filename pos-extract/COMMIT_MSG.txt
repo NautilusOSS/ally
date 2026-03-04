@@ -1,0 +1,12 @@
+Add POS integration pack for Algorand POS v0
+
+- Add pos-extract/ with extraction artifacts from Ally (Voi DEX aggregator)
+- POS_INTEGRATION_SUMMARY.md: module candidates, runtime summary, punch list
+- module-extract.json: router, arc200-token, pool, wallet modules (actions, queries, config)
+- runtime-extract.json: wallet, transactions, indexing behaviors
+- OPEN_QUESTIONS.md: TBD items (Swap-API, fee/MBR, indexer, etc.)
+- POS_IMPORT_PLAN.md: step-by-step import plan and validation checklist
+- acr-docs/: Agent Capability Registry docs (capabilities, protocols, skills)
+
+All POS extraction output is contained under pos-extract/ for use by
+Algorand Protocol OS integration.
